@@ -12,3 +12,4 @@ if __name__ == "__main__":
     a = Hamiltonian.create_random_hamiltonian(5000)
     print(a.evolve_state(np.random.rand(5000), 1))
     # print(np.matmul([[2, 3], [4, 5], [6, 7]], [1, 2]))
+    a = np.eye(2)

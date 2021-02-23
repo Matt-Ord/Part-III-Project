@@ -2,10 +2,7 @@ import unittest
 from SystemState import SystemState
 
 
-class TestHamiltonian(unittest.TestCase):
-
-    def test_timestep(self):
-        initial_state = []
+class TestSystemState(unittest.TestCase):
 
     def test_permutations_for_2_1(self):
 
