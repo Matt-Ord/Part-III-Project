@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from typing import Dict, List, NamedTuple
-from Hamiltonian import Hamiltonian
+from simulation.Hamiltonian import Hamiltonian
 import numpy as np
 import matplotlib.pyplot as plt
-from ElectronSystem import ElectronSystem, ElectronSystemUtil
+from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
 import matplotlib as mpl
 
 
