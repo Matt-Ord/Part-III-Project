@@ -1,8 +1,5 @@
 from __future__ import annotations
 import numpy as np
-from functools import cache
-
-from numpy.linalg import eig, norm
 
 
 class Hamiltonian():
@@ -15,6 +12,9 @@ class Hamiltonian():
                 f'matrix representation has the wrong shape:\
                     actual {matrix_representation.shape}, \
                     expected a square matrix')
+        if not self._is_valid_matrix(matrix_representation):
+            raise Exception(
+                f'matrix representation is not hermitian')
         self._matrix_representation = matrix_representation.copy()
 
     @property
@@ -31,7 +31,7 @@ class Hamiltonian():
 
     def _calculate_eigenvalues_and_vectors(self):
         self._eigenvalues, self._eigenvectors = \
-            np.linalg.eig(self._matrix_representation)
+            np.linalg.eigh(self._matrix_representation)
 
     def _get_number_of_states(self):
         return self._matrix_representation.shape[0]
@@ -39,21 +39,35 @@ class Hamiltonian():
     def _is_valid_state_vector(self, vector):
         return vector.shape == (self._get_number_of_states(),)
 
-    def _is_valid_matrix_shape(self, matrix_representation):
-        return len(matrix_representation.shape) == 2 and \
-            matrix_representation.shape[0] == matrix_representation.shape[1]
+    @staticmethod
+    def _is_valid_matrix_shape(matrix_representation):
+        return (len(matrix_representation.shape) == 2 and
+                matrix_representation.shape[0] ==
+                matrix_representation.shape[1])
 
-    def evolve_system_vector(self, intial_state_vector, time):
-        initial_state_decomposition = \
-            self.get_eigen_decomposition_of_vector(intial_state_vector)
+    @staticmethod
+    def _is_valid_matrix(matrix_representation):
+        return np.all(
+            np.conj(matrix_representation.T) == matrix_representation)
+
+    def evolve_system_vector(self, intial_state_vector, time, hbar=1):
+        initial_state_decomposition = self.get_eigen_decomposition_of_vector(
+            intial_state_vector
+        )
+
         final_state_decompositon = self.get_decomposition_after_time(
-            initial_state_decomposition, time)
-        final_state = \
-            self.get_vector_of_eigen_decomposition(final_state_decompositon)
+            initial_state_decomposition,
+            time,
+            hbar,
+        )
+
+        final_state = self.get_vector_of_eigen_decomposition(
+            final_state_decompositon
+        )
         return final_state
 
-    def get_decomposition_after_time(self, decomposition, time):
-        eigenvector_phase_shift = np.exp(1j * self.eigenvalues * time)
+    def get_decomposition_after_time(self, decomposition, time, hbar=1):
+        eigenvector_phase_shift = np.exp(1j * self.eigenvalues * time / hbar)
         return np.multiply(
             eigenvector_phase_shift, decomposition)
 
@@ -72,6 +86,19 @@ class Hamiltonian():
     def __add__(self, other: Hamiltonian) -> Hamiltonian:
         return type(self)(self._matrix_representation
                           + other._matrix_representation)
+
+    def __mul__(self, other: complex) -> Hamiltonian:
+        return type(self)(self._matrix_representation.copy() * other)
+
+    __rmul__ = __mul__
+
+    def __getitem__(self, key):
+        # only allow access to the values in _matrix_representation
+        # not the sub-array itself!
+        if type(key) is not tuple or len(key) != 2:
+            raise IndexError
+        val = self._matrix_representation[key]
+        return val
 
     def __str__(self) -> str:
         return self._matrix_representation.__str__()

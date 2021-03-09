@@ -9,10 +9,28 @@ class ElectronSystem():
         self.electron_basis_states = np.array(electron_basis_states)
         self.system_vector = system_vector
 
-    def evolve_system(self, hamiltonian: Hamiltonian, time):
+    def evolve_system(self, hamiltonian: Hamiltonian, time, hbar=1):
         evolved_system_vector = hamiltonian.evolve_system_vector(
             self.system_vector,
-            time)
+            time,
+            hbar
+        )
+        return type(self)(evolved_system_vector, self.electron_basis_states)
+
+    def evolve_system_decoherently(
+        self,
+        hamiltonian: Hamiltonian,
+        time,
+        hbar=1
+    ):
+        evolved_system_vector = hamiltonian.evolve_system_vector(
+            self.system_vector,
+            time,
+            hbar
+        )
+        evolved_system_vector = evolved_system_vector * \
+            np.exp(2j * np.pi * np.random.rand(*evolved_system_vector.shape))
+
         return type(self)(evolved_system_vector, self.electron_basis_states)
 
     def get_electron_density_for_each_hydrogen(self):
@@ -29,9 +47,12 @@ class ElectronSystem():
     def get_number_of_electron_states(self):
         return self.electron_basis_states.shape[0]
 
+    def get_number_of_electrons(self):
+        return self.electron_basis_states.shape[1]
+
     def __str__(self) -> str:
-        return (f"state vector: {self.system_vector}\n"
-                "basis:\n{self.electron_basis_states}\n")
+        return (f"state vector:\n{self.system_vector}\n"
+                f"basis:\n{self.electron_basis_states}\n")
 
 
 class ElectronSystemUtil():
@@ -53,15 +74,13 @@ class ElectronSystemUtil():
                                                 number_of_electrons - 1)]
                 )
 
-    @ classmethod
-    def create(cls, system, electron_state, hydrogen_state):
+    def _create_explicit_state_vector(
+        cls,
+        electron_basis_states,
+        electron_state,
+        hydrogen_state
+    ):
         number_of_electron_states = len(electron_state)
-        number_of_electrons = sum(electron_state)
-        electron_basis_states = cls._generate_electron_basis(
-            number_of_electron_states,
-            number_of_electrons)
-
-        number_of_electron_states = len(electron_basis_states)
 
         electron_state_index = electron_basis_states.index(
             list(electron_state))
@@ -70,12 +89,62 @@ class ElectronSystemUtil():
 
         state_vector = np.zeros(2*number_of_electron_states)
         state_vector[overall_index] = 1
+        return state_vector
+
+    @classmethod
+    def _create_random_state_vector(cls, electron_basis_states):
+        random_state = np.concatenate(
+            [np.random.normal(size=len(electron_basis_states))
+             * np.exp(2j * np.pi * np.random.rand(len(electron_basis_states))),
+             np.zeros(len(electron_basis_states))])
+
+        normalised_random_state = random_state / \
+            np.linalg.norm(random_state)
+        return normalised_random_state
+
+    @ classmethod
+    def create_explicit(cls, system, electron_state, hydrogen_state):
+        number_of_electron_states = len(electron_state)
+        number_of_electrons = sum(electron_state)
+        electron_basis_states = cls._generate_electron_basis(
+            number_of_electron_states,
+            number_of_electrons
+        )
+
+        state_vector = cls._create_explicit_state_vector(
+            electron_basis_states,
+            electron_state,
+            hydrogen_state
+        )
+
         return system(state_vector, electron_basis_states)
 
-    def create_kinetic(self,
-                       hamiltonian,
-                       electron_energies,
-                       hydrogen_energies):
+    @ classmethod
+    def create_random(
+        cls,
+        system,
+        number_of_electron_states,
+        number_of_electrons,
+        hydrogen_state
+    ):
+
+        electron_basis_states = cls._generate_electron_basis(
+            number_of_electron_states,
+            number_of_electrons
+        )
+
+        state_vector = cls._create_random_state_vector(
+            electron_basis_states
+        )
+
+        return system(state_vector, electron_basis_states)
+
+    def create_kinetic(
+        self,
+        hamiltonian,
+        electron_energies,
+        hydrogen_energies
+    ):
         basis_states = self.system.electron_basis_states
 
         basis_electron_energies = np.sum(np.array(electron_energies) *
@@ -151,10 +220,9 @@ class ElectronSystemUtil():
         return a
 
     def create_constant_interaction(self, hamiltonian, block_factors):
-        k_values = np.zeros(self.system.get_number_of_electron_states())
+        k_values = np.zeros(self.system.get_number_of_electrons())
         def q_factor(x): return 1
         return self.create_q_dependent_interaction(
-            self,
             hamiltonian,
             block_factors,
             k_values,

@@ -18,6 +18,19 @@ class TestHamiltonian(unittest.TestCase):
         b = a.get_eigen_decomposition_of_vector(np.array([1, 1]))
         self.assertCountEqual(b, [1., 1.])
 
+    def test_eigenvalues_of_hermitian_are_real(self):
+        hamiltonian = HamiltonianUtil.create_random_hermitian(
+            Hamiltonian,
+            10
+        )
+        self.assertTrue(np.allclose(hamiltonian._matrix_representation,
+                                    np.conj(hamiltonian._matrix_representation.T)),
+                        msg='matrix is not hermitian')
+        self.assertTrue(
+            np.allclose(hamiltonian.eigenvalues, np.real(
+                hamiltonian.eigenvalues)),
+            msg='matrix eigenvectors are not real')
+
     def test_decomposition_of_eigenstates(self):
         h = np.random.rand(5, 5)
         hamiltonian = Hamiltonian(h)

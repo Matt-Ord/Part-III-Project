@@ -8,7 +8,7 @@ from Hamiltonian import Hamiltonian, HamiltonianUtil
 class TestElectronSystem(unittest.TestCase):
 
     def test_system_is_normalised(self):
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem,
             [1, 0, 0, 0],
             0
@@ -16,7 +16,7 @@ class TestElectronSystem(unittest.TestCase):
         self.assertEqual(1, np.linalg.norm(system.system_vector))
 
     def test_electron_density_one_way_hamiltonian(self):
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem,
             [1, 0, 0, 0],
             0
@@ -52,7 +52,7 @@ class TestElectronSystem(unittest.TestCase):
     def test_get_electron_density_for_each_hydrogen(self):
         hydrogen_state = np.random.choice([0, 1])
         electron_state = [1, 1, 1, 0, 0]
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem, electron_state, hydrogen_state)
 
         actual_density = system.get_electron_density_for_each_hydrogen()
@@ -67,7 +67,7 @@ class TestElectronSystem(unittest.TestCase):
     def test_get_probability_for_each_hydrogen(self):
         hydrogen_state = np.random.choice([0, 1])
         electron_state = [1, 1, 1, 0, 0]
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem, electron_state, hydrogen_state)
 
         actual_probabliliites = system.get_probability_for_each_hydrogen()
@@ -77,6 +77,45 @@ class TestElectronSystem(unittest.TestCase):
         self.assertCountEqual(
             list(actual_probabliliites[int(not hydrogen_state)]),
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+    def test_generate_kinetic_hamiltonian(self):
+        hydrogen_state = 1  # np.random.choice([0, 1])
+        electron_state = [1, 1, 0, 0]
+        system = ElectronSystemUtil.create_explicit(
+            ElectronSystem, electron_state, hydrogen_state)
+        hamiltonian = ElectronSystemUtil\
+            .given(system)\
+            .create_kinetic(
+                Hamiltonian, [1, 2, 3, 4], [0, 1])
+        print(hamiltonian)
+        print(system)
+        print('probability', system.get_electron_density_for_each_hydrogen())
+
+    def test_generate_hopping_hamiltonian(self):
+        hydrogen_state = 0  # np.random.choice([0, 1])
+        electron_state = [1, 1, 0, 0]
+        system = ElectronSystemUtil.create_explicit(
+            ElectronSystem, electron_state, hydrogen_state)
+        hamiltonian = ElectronSystemUtil\
+            .given(system)\
+            .create_constant_interaction(
+                Hamiltonian, block_factors=[[-1, 1], [1, -1]])
+        print(hamiltonian)
+        print(system)
+
+    def test_generate_hopping_hamiltonian_is_hermitian(self):
+        hydrogen_state = 0  # np.random.choice([0, 1])
+        electron_state = [1, 1, 0, 0]
+        system = ElectronSystemUtil.create_explicit(
+            ElectronSystem, electron_state, hydrogen_state)
+        hamiltonian = ElectronSystemUtil\
+            .given(system)\
+            .create_constant_interaction(
+                Hamiltonian, block_factors=[[-1, 1], [1, -1]])
+        self.assertTrue((hamiltonian._matrix_representation ==
+                         np.conj(hamiltonian._matrix_representation.T)).all())
+        self.assertTrue((hamiltonian.eigenvalues == np.real(
+            hamiltonian.eigenvalues)).all())
 
     def test_has_at_most_one_hop(self):
         initial_state = np.array([0, 0, 1, 1])
@@ -113,7 +152,7 @@ class TestElectronSystem(unittest.TestCase):
     def test_generate_diagonal_interaction_base_matrix(self):
         hydrogen_state = 0
         electron_state = [1, 0, 1, 0, 1, 1]
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem, electron_state, hydrogen_state)
 
         def strength_function(x, y) -> bool: return (x == y).all()
@@ -129,7 +168,7 @@ class TestElectronSystem(unittest.TestCase):
 
         hydrogen_state = 0
         electron_state = [1, 1, 0, 0]
-        system = ElectronSystemUtil.create(
+        system = ElectronSystemUtil.create_explicit(
             ElectronSystem, electron_state, hydrogen_state)
 
         actual_base_matrix = ElectronSystemUtil.given(
