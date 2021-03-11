@@ -2,7 +2,7 @@ import unittest
 from ElectronSystem import ElectronSystem, ElectronSystemUtil
 import numpy as np
 
-from Hamiltonian import Hamiltonian, HamiltonianUtil
+from Hamiltonian import Hamiltonian
 
 
 class TestElectronSystem(unittest.TestCase):
@@ -14,40 +14,6 @@ class TestElectronSystem(unittest.TestCase):
             0
         )
         self.assertEqual(1, np.linalg.norm(system.system_vector))
-
-    def test_electron_density_one_way_hamiltonian(self):
-        system = ElectronSystemUtil.create_explicit(
-            ElectronSystem,
-            [1, 0, 0, 0],
-            0
-        )
-
-        hamiltonian: Hamiltonian = ElectronSystemUtil\
-            .given(system)\
-            .create_block_identity(
-                Hamiltonian,
-                block_factors=[[0, 1], [0, 0]],
-            )
-
-        a = ElectronSystemUtil\
-            .given(system)\
-            .create_kinetic(Hamiltonian, [1, 2, 3, 4], [10, 10.1])
-
-        print(hamiltonian)
-        print(a)
-
-        print('before', system.system_vector)
-
-        hamiltonian += a
-
-        evolved_system = system.evolve_system(
-            hamiltonian,
-            40000
-        )
-        print(evolved_system._get_state_probabilities())
-        print('after', np.abs(evolved_system.system_vector))
-        print(evolved_system.get_electron_density_for_each_hydrogen())
-        print()
 
     def test_get_electron_density_for_each_hydrogen(self):
         hydrogen_state = np.random.choice([0, 1])
@@ -71,6 +37,7 @@ class TestElectronSystem(unittest.TestCase):
             ElectronSystem, electron_state, hydrogen_state)
 
         actual_probabliliites = system.get_probability_for_each_hydrogen()
+
         self.assertCountEqual(
             list(actual_probabliliites[hydrogen_state]),
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 1])

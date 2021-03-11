@@ -1,4 +1,3 @@
-from Hamiltonian import Hamiltonian
 import numpy as np
 
 if __name__ == "__main__":
@@ -16,4 +15,4 @@ if __name__ == "__main__":
     # print(np.linalg.eigh(a))
     print([1, 2, 3, 4, 5][:-1])
 
-    np.save('test', [1, 2, 3])
+    np.save("test", [1, 2, 3])
