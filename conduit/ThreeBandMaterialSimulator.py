@@ -8,13 +8,13 @@ from properties.MaterialProperties import (
 
 from MaterialSimulator import MaterialSimulator
 
-# Simulates a material using the two band
+# Simulates a material using the three band
 # approach, which alllows for nearly
 # degenerate hopping to be seen and the
 # difference in hydrogen energy to be incorperated
 
 
-class TwoBandMaterialSimulator(MaterialSimulator):
+class ThreeBandMaterialSimulator(MaterialSimulator):
     def __init__(
         self,
         material_properties: MaterialProperties,
@@ -33,10 +33,21 @@ class TwoBandMaterialSimulator(MaterialSimulator):
     def _generate_electron_energies(self):
         hydrogen_energies = self.material_properties.hydrogen_energies
 
-        lower_band_energies = self._get_band_energies() - hydrogen_energies[0]
-        upper_band_energies = self._get_band_energies() - hydrogen_energies[1]
+        first_band_energies = (
+            self._get_band_energies() - hydrogen_energies[0] + hydrogen_energies[1]
+        )
+        second_band_energies = self._get_band_energies()
+        third_band_energies = (
+            self._get_band_energies() - hydrogen_energies[1] + hydrogen_energies[0]
+        )
 
-        energies = np.concatenate([lower_band_energies, upper_band_energies])
+        energies = np.concatenate(
+            [
+                first_band_energies,
+                second_band_energies,
+                third_band_energies,
+            ]
+        )
         print(energies)
         return energies
 
@@ -51,15 +62,15 @@ class TwoBandMaterialSimulator(MaterialSimulator):
         return self.bandwidth / self.number_of_states_per_band
 
     def _get_energy_jitter(self):
-        return 0.1 * self._get_energy_spacing()
+        return 0.01 * self._get_energy_spacing()
 
 
-class TwoBandNickelMaterialSimulator(TwoBandMaterialSimulator):
+class ThreeBandNickelMaterialSimulator(ThreeBandMaterialSimulator):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(NICKEL_MATERIAL_PROPERTIES, *args, **kwargs)
 
 
-class TwoBandNickelMaterialSimulatorUtil:
+class ThreeBandNickelMaterialSimulatorUtil:
     @staticmethod
     def _calculate_bandwidth(target_frequency):
         return scipy.constants.hbar * target_frequency / 2
@@ -67,21 +78,21 @@ class TwoBandNickelMaterialSimulatorUtil:
     @classmethod
     def create(
         cls,
-        sim: TwoBandMaterialSimulator,
+        sim: ThreeBandMaterialSimulator,
         temperature,
         number_of_states_per_band,
         target_frequency,
-    ) -> TwoBandMaterialSimulator:
+    ) -> ThreeBandMaterialSimulator:
         bandwidth = cls._calculate_bandwidth(target_frequency)
         print("bandwidth", bandwidth)
         return sim(temperature, number_of_states_per_band, bandwidth)
 
 
 if __name__ == "__main__":
-    nickel_sim = TwoBandNickelMaterialSimulatorUtil.create(
-        TwoBandNickelMaterialSimulator,
-        temperature=150,
-        number_of_states_per_band=4,
+    nickel_sim = ThreeBandNickelMaterialSimulatorUtil.create(
+        ThreeBandNickelMaterialSimulator,
+        temperature=10000,
+        number_of_states_per_band=3,
         target_frequency=1 * 10 ** (9),
     )
 
@@ -91,5 +102,5 @@ if __name__ == "__main__":
     # )
 
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 4 * 10 ** -4, 1000), average_over=40, jitter_electrons=True
+        times=np.linspace(0, 4 * 10 ** -5, 1000), average_over=20, jitter_electrons=True
     )

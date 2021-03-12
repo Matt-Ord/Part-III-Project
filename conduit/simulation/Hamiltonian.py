@@ -148,6 +148,7 @@ class HamiltonianUtil:
     def characterise_overlap(hamiltonian: Hamiltonian, state_1, state_2):
         state_1_decomposition = hamiltonian.get_eigen_decomposition_of_vector(state_1)
         state_2_decomposition = hamiltonian.get_eigen_decomposition_of_vector(state_2)
-        product = np.multiply(state_1_decomposition, state_2_decomposition)
+        product = np.multiply(state_1_decomposition, np.conj(state_2_decomposition))
+        # return np.sum(product)
         abs_product = np.abs(product)
         return np.sum(abs_product)

@@ -14,9 +14,14 @@ from simulation.ElectronSimulationPlotter import ElectronSimulationPlotter
 
 class MaterialSimulator(ABC):
     def __init__(
-        self, material_properties: MaterialProperties, *args, **kwargs
+        self,
+        material_properties: MaterialProperties,
+        temperature: float,
+        *args,
+        **kwargs,
     ) -> None:
         self.material_properties = material_properties
+        self.temperature = temperature
         self.electron_energies = self._generate_electron_energies(*args, **kwargs)
 
     @property
@@ -26,6 +31,10 @@ class MaterialSimulator(ABC):
     @property
     def fermi_wavevector(self):
         return self.material_properties.fermi_wavevector
+
+    @property
+    def boltzmann_energy(self):
+        return self.temperature * scipy.constants.Boltzmann
 
     @abstractmethod
     def _generate_electron_energies(self, *args, **kwargs):
@@ -77,39 +86,46 @@ class MaterialSimulator(ABC):
         prefactor = 4 * np.pi * potential_factor / implied_volume
         return prefactor
 
-    def simulate_material(self, times):
+    def _get_energy_jitter(self):
+        return 0
 
+    def _create_simulation(self, jitter_electrons=False):
+        electron_energy_jitter = self._get_energy_jitter() if jitter_electrons else 0
         sim = ElectronSimulation(
             ElectronSimulationConfig(
                 hbar=scipy.constants.hbar,
+                boltzmann_energy=self.boltzmann_energy,
                 electron_energies=self.electron_energies,
                 hydrogen_energies=self.hydrogen_energies,
                 block_factors=self.material_properties.hydrogen_overlaps,
                 q_prefactor=self._get_interaction_prefactor(),
+                electron_energy_jitter=electron_energy_jitter,
             )
         )
+        return sim
+
+    def simulate_material(self, times, jitter_electrons=False):
+
+        sim = self._create_simulation(jitter_electrons)
 
         print(self._get_interaction_prefactor())
 
         ElectronSimulationPlotter.plot_random_system_evolved_coherently(
             sim,
             times,
+            thermal=True,
         )
 
-    def simulate_average_material(self, times, average_over=10):
+    def simulate_average_material(self, times, average_over=10, jitter_electrons=False):
 
-        sim = ElectronSimulation(
-            ElectronSimulationConfig(
-                hbar=scipy.constants.hbar,
-                electron_energies=self.electron_energies,
-                hydrogen_energies=self.hydrogen_energies,
-                block_factors=self.material_properties.hydrogen_overlaps,
-                q_prefactor=self._get_interaction_prefactor(),
-            )
-        )
+        sim = self._create_simulation(jitter_electrons)
 
         ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
             sim,
             times,
             average_over=average_over,
+            thermal=True,
+            jitter_for_each=jitter_electrons,
         )
+
+        # ElectronSimulationPlotter.plot_tunneling_overlaps(sim)

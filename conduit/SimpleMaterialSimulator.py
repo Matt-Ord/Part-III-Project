@@ -21,10 +21,9 @@ class SimpleMaterialElectronSimulator(MaterialSimulator):
     def hydrogen_energies(self):
         return [0, 0]
 
-    def _generate_electron_energies(self, number_of_states, temperature):
-        d_k = (
-            scipy.constants.Boltzmann
-            * temperature
+    def _generate_electron_energies(self, number_of_states):
+        d_k = 4 * (
+            self.boltzmann_energy
             * scipy.constants.electron_mass
             / (self.material_properties.fermi_wavevector * (scipy.constants.hbar ** 2))
         )
@@ -46,13 +45,16 @@ class SimpleMaterialElectronSimulator(MaterialSimulator):
     def _get_energy_spacing(self):
         return self.electron_energies[1] - self.electron_energies[0]
 
+    def _get_energy_jitter(self):
+        return 0.3 * self._get_energy_spacing()
+
 
 class SimpleNickelElectronSimulator(SimpleMaterialElectronSimulator):
-    def __init__(self, number_of_states, temperature) -> None:
+    def __init__(self, temperature, number_of_states) -> None:
         super().__init__(
             NICKEL_MATERIAL_PROPERTIES,
-            number_of_states,
             temperature,
+            number_of_states,
         )
 
 
@@ -61,6 +63,11 @@ if __name__ == "__main__":
         temperature=150,
         number_of_states=8,
     )
-    nickel_sim.simulate_material(times=np.linspace(0, 3 * 10 ** -10, 1000))
+    nickel_sim.simulate_material(times=np.linspace(0, 0.001 * 10 ** -12, 1000))
 
-    # nickel_sim.simulate_average_material(times=np.linspace(0, 3 * 10 ** -10, 500))
+    # nickel_sim.simulate_average_material(
+    #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
+    # )
+    nickel_sim.simulate_average_material(
+        times=np.linspace(0, 3 * 10 ** -10, 500), average_over=40, jitter_electrons=True
+    )
