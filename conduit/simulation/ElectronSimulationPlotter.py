@@ -11,6 +11,17 @@ from simulation.ElectronSimulation import (
 
 class ElectronSimulationPlotter:
     @staticmethod
+    def _filter_data_exponentially(data, decay_factor):
+        filtered_data = [data[0]]
+        for datapoint in data[1:]:
+            new_average = (
+                decay_factor * datapoint + (1 - decay_factor) * filtered_data[-1]
+            )
+
+            filtered_data.append(new_average)
+        return filtered_data
+
+    @staticmethod
     def _plot_varying_density_against_time(densities, times, energies):
         colour_cycle = plt.cm.Spectral(np.linspace(0, 1, len(densities)))
 
@@ -52,6 +63,39 @@ class ElectronSimulationPlotter:
         # ax1.set_ylim([0, 1])
         ax.set_xlabel("time")
         ax.set_xlim(left=0)
+        return (fig, ax)
+
+    @staticmethod
+    def _calculate_decay_factor(period_of_fluctuations, times):
+        time_since_start = times - times[0]
+        times_in_first_period = time_since_start <= period_of_fluctuations
+        number_of_timesteps_in_first_period = np.sum(times_in_first_period)
+        return 1 / number_of_timesteps_in_first_period
+
+    @classmethod
+    def _plot_average_number_deviation_against_time(
+        cls,
+        target_numbers,
+        number_in_each_state: Dict[str, List[float]],
+        times,
+        period_of_noise_fluctuation=0,
+    ):
+        decay_factor = cls._calculate_decay_factor(period_of_noise_fluctuation, times)
+
+        (fig, ax) = plt.subplots(1)
+
+        for (state_name, numbers) in number_in_each_state.items():
+            number_fluctuation = np.abs(np.array(numbers) - target_numbers[state_name])
+            filtered_number_fluctuation = cls._filter_data_exponentially(
+                number_fluctuation, decay_factor
+            )
+            ax.plot(times, filtered_number_fluctuation, label=state_name)
+
+        ax.set_title("Plot of Total Electron Density Against Time")
+        ax.legend()
+        ax.set_ylabel("Total Electron Density")
+        # ax1.set_ylim([0, 1])
+        ax.set_xlabel("time")
         return (fig, ax)
 
     @staticmethod
@@ -128,7 +172,7 @@ class ElectronSimulationPlotter:
 
     @classmethod
     def _plot_electron_densities_for_each(
-        cls, electron_densities_for_each, times, energies
+        cls, electron_densities_for_each, times, energies, period_of_noise_fluctuation=0
     ):
         cls._plot_total_number_against_time_for_each(
             [
@@ -155,6 +199,19 @@ class ElectronSimulationPlotter:
             times=times,
         )
         ax.set_title("Plot of average Electron Density Against Time")
+        plt.show()
+
+        target_number = sum(initially_occupied_densities[0]) / 2
+        (fig, ax) = cls._plot_average_number_deviation_against_time(
+            target_numbers={key: target_number for key in ["fcc", "hcp"]},
+            number_in_each_state={
+                "fcc": [sum(x) for x in initially_occupied_densities],
+                "hcp": [sum(x) for x in initially_unoccupied_densities],
+            },
+            times=times,
+            period_of_noise_fluctuation=period_of_noise_fluctuation,
+        )
+        ax.set_ylim([0, None])
         plt.show()
 
         (fig, ax) = cls._plot_average_density_against_energy(
@@ -204,14 +261,22 @@ class ElectronSimulationPlotter:
 
     @classmethod
     def plot_average_densities_of_system_evolved_coherently(
-        cls, sim: ElectronSimulation, times: List[float], *args, **kwargs
+        cls,
+        sim: ElectronSimulation,
+        times: List[float],
+        *args,
+        period_of_noise_fluctuation=0,
+        **kwargs,
     ):
         electron_densities_for_each = sim.simulate_random_system_coherently_for_each(
             times, *args, **kwargs
         )
 
         cls._plot_electron_densities_for_each(
-            electron_densities_for_each, times, sim.electron_energies
+            electron_densities_for_each,
+            times,
+            sim.electron_energies,
+            period_of_noise_fluctuation,
         )
 
     @classmethod

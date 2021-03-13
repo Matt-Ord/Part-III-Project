@@ -16,6 +16,7 @@ class ElectronSimulationConfig(NamedTuple):
     block_factors: List[List[float]] = [[0, 0], [0, 0]]
     q_prefactor: float = 1
     electron_energy_jitter: float = 0
+    number_of_electrons: int = None
 
 
 class ElectronSimulation:
@@ -30,7 +31,15 @@ class ElectronSimulation:
 
     @property
     def number_of_electrons(self):
-        return int(self.number_of_electron_states / 2)
+        if self.config.number_of_electrons is None:
+            if self.number_of_electron_states % 2 == 0:
+                return int(self.number_of_electron_states / 2)
+            else:  # choose to round up or down
+                return np.floor(self.number_of_electron_states / 2) + np.random.choice(
+                    [0, 1]
+                )
+
+        return self.config.number_of_electrons
 
     @property
     def electron_energies(self):

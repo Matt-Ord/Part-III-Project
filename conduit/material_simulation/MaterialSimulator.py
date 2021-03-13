@@ -24,9 +24,15 @@ class MaterialSimulator(ABC):
         self.temperature = temperature
         self.electron_energies = self._generate_electron_energies(*args, **kwargs)
 
+    number_of_electrons = None
+
     @property
     def hydrogen_energies(self):
         return self.material_properties.hydrogen_energies
+
+    @property
+    def hydrogen_energies_for_simulation(self):
+        return self.hydrogen_energies
 
     @property
     def fermi_wavevector(self):
@@ -96,10 +102,11 @@ class MaterialSimulator(ABC):
                 hbar=scipy.constants.hbar,
                 boltzmann_energy=self.boltzmann_energy,
                 electron_energies=self.electron_energies,
-                hydrogen_energies=self.hydrogen_energies,
+                hydrogen_energies=self.hydrogen_energies_for_simulation,
                 block_factors=self.material_properties.hydrogen_overlaps,
                 q_prefactor=self._get_interaction_prefactor(),
                 electron_energy_jitter=electron_energy_jitter,
+                number_of_electrons=self.number_of_electrons,
             )
         )
         return sim
@@ -116,7 +123,9 @@ class MaterialSimulator(ABC):
             thermal=True,
         )
 
-    def simulate_average_material(self, times, average_over=10, jitter_electrons=False):
+    def simulate_average_material(
+        self, times, average_over=10, jitter_electrons=False, **kwargs
+    ):
 
         sim = self._create_simulation(jitter_electrons)
 
@@ -126,6 +135,7 @@ class MaterialSimulator(ABC):
             average_over=average_over,
             thermal=True,
             jitter_for_each=jitter_electrons,
+            **kwargs,
         )
 
         # ElectronSimulationPlotter.plot_tunneling_overlaps(sim)

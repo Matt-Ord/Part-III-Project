@@ -5,7 +5,7 @@ from properties.MaterialProperties import (
     NICKEL_MATERIAL_PROPERTIES,
 )
 
-from MaterialSimulator import MaterialSimulator
+from material_simulation.MaterialSimulator import MaterialSimulator
 
 # Simulates a material using the basic approach,
 # without considering the interaction of closely

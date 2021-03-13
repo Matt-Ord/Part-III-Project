@@ -13,6 +13,4 @@ if __name__ == "__main__":
     # a = a + np.conj(a.T)
     # print(np.linalg.eig(a))
     # print(np.linalg.eigh(a))
-    print([1, 2, 3, 4, 5][:-1])
-
-    np.save("test", [1, 2, 3])
+    print([1, 2, 3, 4, 5][1:])
