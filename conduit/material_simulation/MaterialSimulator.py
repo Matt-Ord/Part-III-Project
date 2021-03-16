@@ -35,6 +35,10 @@ class MaterialSimulator(ABC):
         return self.hydrogen_energies
 
     @property
+    def hydrogen_energy_difference(self):
+        return self.hydrogen_energies[1] - self.hydrogen_energies[0]
+
+    @property
     def fermi_wavevector(self):
         return self.material_properties.fermi_wavevector
 
@@ -114,8 +118,6 @@ class MaterialSimulator(ABC):
     def simulate_material(self, times, jitter_electrons=False):
 
         sim = self._create_simulation(jitter_electrons)
-
-        print(self._get_interaction_prefactor())
 
         ElectronSimulationPlotter.plot_random_system_evolved_coherently(
             sim,

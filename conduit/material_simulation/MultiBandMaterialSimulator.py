@@ -64,7 +64,6 @@ class MultiBandMaterialSimulatorUtil:
         **kwargs
     ) -> MultiBandMaterialSimulator:
         bandwidth = cls._calculate_bandwidth(target_frequency)
-        print("bandwidth", bandwidth)
         return sim(
             material_properties,
             temperature,

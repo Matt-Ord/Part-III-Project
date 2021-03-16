@@ -48,7 +48,6 @@ class TwoBandDegenerateMaterialSimulator(MultiBandMaterialSimulator):
         upper_band_energies = self._get_band_energies() + energy_difference / 2
 
         energies = np.concatenate([lower_band_energies, upper_band_energies])
-        print(energies)
         return energies
 
 

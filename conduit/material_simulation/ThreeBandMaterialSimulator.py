@@ -36,7 +36,6 @@ class ThreeBandMaterialSimulator(MultiBandMaterialSimulator):
                 third_band_energies,
             ]
         )
-        print(energies)
         return energies
 
 

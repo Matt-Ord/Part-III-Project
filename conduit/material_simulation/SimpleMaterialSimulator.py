@@ -18,7 +18,7 @@ class SimpleMaterialElectronSimulator(MaterialSimulator):
         super().__init__(*args, **kwargs)
 
     @property
-    def hydrogen_energies(self):
+    def hydrogen_energies_for_simualtion(self):
         return [0, 0]
 
     def _generate_electron_energies(self, number_of_states):

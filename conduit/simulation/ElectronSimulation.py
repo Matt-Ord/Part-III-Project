@@ -127,8 +127,8 @@ class ElectronSimulation:
             dummy_system
         ).create_constant_interaction(Hamiltonian, self.block_factors, self.q_prefactor)
 
-        print("kinetic_energy", kinetic_hamiltonian[0, 0])
-        print("interaction_energy", interaction_hamiltonian[0, 0])
+        #print("kinetic_energy", kinetic_hamiltonian[0, 0])
+        #print("interaction_energy", interaction_hamiltonian[0, 0])
 
         hamiltonian = kinetic_hamiltonian + interaction_hamiltonian
         hamiltonian.save_as_csv("hamiltonian.csv")
@@ -151,7 +151,6 @@ class ElectronSimulation:
         if thermal:
             energy_offsets = self.electron_energies - np.average(self.electron_energies)
             boltzmann_factors = energy_offsets / self.boltzmann_energy
-            print(boltzmann_factors)
 
         initial_system = ElectronSystemUtil.create_random(
             ElectronSystem,

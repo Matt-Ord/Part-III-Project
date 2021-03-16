@@ -11,7 +11,7 @@ class MaterialProperties(NamedTuple):
 NICKEL_FCC_ENERGY_EV = 0.1668191  # eV
 NICKEL_HCP_ENERGY_EV = 0.1794517  # eV
 
-NICKEL_ENERGY_OFFSET_J = 1.012 * 10 ** (-21)
+NICKEL_ENERGY_OFFSET_J = 1.522 * 10 ** (-21)
 
 NICKEL_MATERIAL_PROPERTIES = MaterialProperties(
     fermi_wavevector=1.175 * 10 ** (10),  # m^-1

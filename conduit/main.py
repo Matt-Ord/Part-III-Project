@@ -11,6 +11,4 @@ if __name__ == "__main__":
 
     # a = np.random.rand(10, 10) + 1j * np.random.rand(10, 10)
     # a = a + np.conj(a.T)
-    # print(np.linalg.eig(a))
-    # print(np.linalg.eigh(a))
-    print([1, 2, 3, 4, 5][1:])
+    pass
