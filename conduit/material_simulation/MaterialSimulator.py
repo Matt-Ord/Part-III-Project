@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import List
 import numpy as np
 from simulation.ElectronSimulation import (
     ElectronSimulation,
@@ -47,7 +48,7 @@ class MaterialSimulator(ABC):
         return self.temperature * scipy.constants.Boltzmann
 
     @abstractmethod
-    def _generate_electron_energies(self, *args, **kwargs):
+    def _generate_electron_energies(self, *args, **kwargs) -> List[float]:
         pass
 
     @abstractmethod
@@ -140,4 +141,46 @@ class MaterialSimulator(ABC):
             **kwargs,
         )
 
-        # ElectronSimulationPlotter.plot_tunneling_overlaps(sim)
+    def _occupation_curve_fit_function(self, time, omega, decay_time):
+        return ElectronSimulationPlotter.occupation_curve_fit_function(
+            self.number_of_electrons, time, omega, decay_time
+        )
+
+    def _fit_electron_occupation_curve(self, times, initially_occupied_densities):
+        initial_omega_guess = 10 / (times[-1] - times[0])
+        initial_decay_time_guess = (times[-1] - times[0]) / 4
+
+        return scipy.optimize.curve_fit(
+            lambda t, w, d: self._occupation_curve_fit_function,
+            times,
+            initially_occupied_densities,
+            p0=[initial_omega_guess, initial_decay_time_guess],
+        )
+
+    def simulate_average_densities(
+        self, times, average_over=10, jitter_electrons=False, **kwargs
+    ):
+        sim = self._create_simulation(jitter_electrons)
+        electron_densities_for_each = sim.simulate_random_system_coherently_for_each(
+            times,
+            average_over=average_over,
+            thermal=True,
+            jitter_for_each=jitter_electrons,
+            **kwargs,
+        )
+
+        average_densities = ElectronSimulationPlotter.calculate_average_density(
+            electron_densities_for_each
+        )
+        return average_densities
+
+        initially_occupied_densities = [d[0] for d in average_densities]
+        initially_unoccupied_densities = [d[1] for d in average_densities]
+
+        (optimal_omega, optimal_decay_time), pcov = self._fit_electron_occupation_curve(
+            times, initially_occupied_densities
+        )
+
+        print("omega", optimal_omega)
+        print("decay_time", optimal_decay_time)
+        print(pcov)

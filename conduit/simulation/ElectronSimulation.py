@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, List, NamedTuple
+from typing import List, NamedTuple
 
-from simulation.Hamiltonian import Hamiltonian, HamiltonianUtil
+from simulation.Hamiltonian import Hamiltonian
 import numpy as np
-import matplotlib.pyplot as plt
 from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
 
 
@@ -13,10 +12,10 @@ class ElectronSimulationConfig(NamedTuple):
     boltzmann_energy: float
     electron_energies: List[float]
     hydrogen_energies: List[float]
-    block_factors: List[List[float]] = [[0, 0], [0, 0]]
+    block_factors: List[List[complex]] = [[0, 0], [0, 0]]
     q_prefactor: float = 1
     electron_energy_jitter: float = 0
-    number_of_electrons: int = None
+    number_of_electrons: int | None = None
 
 
 class ElectronSimulation:
@@ -114,7 +113,7 @@ class ElectronSimulation:
     def _create_hamiltonian(self) -> Hamiltonian:
         dummy_system = self._setup_random_initial_system()
         electron_energies = self._randomise_energies(
-            self.electron_energies, self.electron_energy_jitter
+            np.array(self.electron_energies), self.electron_energy_jitter
         )
 
         kinetic_hamiltonian = ElectronSystemUtil.given(dummy_system).create_kinetic(
@@ -127,8 +126,8 @@ class ElectronSimulation:
             dummy_system
         ).create_constant_interaction(Hamiltonian, self.block_factors, self.q_prefactor)
 
-        #print("kinetic_energy", kinetic_hamiltonian[0, 0])
-        #print("interaction_energy", interaction_hamiltonian[0, 0])
+        # print("kinetic_energy", kinetic_hamiltonian[0, 0])
+        # print("interaction_energy", interaction_hamiltonian[0, 0])
 
         hamiltonian = kinetic_hamiltonian + interaction_hamiltonian
         hamiltonian.save_as_csv("hamiltonian.csv")

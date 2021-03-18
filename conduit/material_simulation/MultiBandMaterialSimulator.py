@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Generic, Type, TypeVar
 import numpy as np
 import scipy.constants
 
@@ -8,6 +9,8 @@ from properties.MaterialProperties import (
 )
 
 from material_simulation.MaterialSimulator import MaterialSimulator
+
+T = TypeVar("T")
 
 # Simulates a material using the multi band
 # approach, which alllows for nearly
@@ -47,7 +50,7 @@ class MultiBandMaterialSimulator(MaterialSimulator):
         return 0.1 * self._get_energy_spacing()
 
 
-class MultiBandMaterialSimulatorUtil:
+class MultiBandMaterialSimulatorUtil(Generic[T]):
     @staticmethod
     def _calculate_bandwidth(target_frequency):
         return scipy.constants.hbar * target_frequency / 2
@@ -55,14 +58,14 @@ class MultiBandMaterialSimulatorUtil:
     @classmethod
     def create(
         cls,
-        sim: MultiBandMaterialSimulator,
+        sim: Type[T],
         material_properties: MaterialProperties,
         temperature,
         number_of_states_per_band,
         target_frequency,
         *args,
         **kwargs
-    ) -> MultiBandMaterialSimulator:
+    ) -> T:
         bandwidth = cls._calculate_bandwidth(target_frequency)
         return sim(
             material_properties,
@@ -78,13 +81,13 @@ class MultiBandNickelMaterialSimulatorUtil(MultiBandMaterialSimulatorUtil):
     @classmethod
     def create(
         cls,
-        sim: MultiBandMaterialSimulator,
+        sim: type[T],
         temperature,
         number_of_states_per_band,
         target_frequency,
         *args,
         **kwargs
-    ) -> MultiBandMaterialSimulator:
+    ) -> T:
         return super().create(
             sim,
             NICKEL_MATERIAL_PROPERTIES,

@@ -58,9 +58,8 @@ if __name__ == "__main__":
         number_of_states_per_band=4,
         target_frequency=1 * 10 ** (11),  # 1 * 10 ** (9)
         energy_difference=1,
+        number_of_electrons=7,
     )
-
-    nickel_sim.number_of_electrons = 7
 
     nickel_sim.simulate_average_material(
         times=np.linspace(0, 2 * 10 ** -5, 1000),

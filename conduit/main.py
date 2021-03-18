@@ -11,4 +11,4 @@ if __name__ == "__main__":
 
     # a = np.random.rand(10, 10) + 1j * np.random.rand(10, 10)
     # a = a + np.conj(a.T)
-    pass
+    test = {}

@@ -1,7 +1,10 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy.random import beta
+import numpy.typing
+import scipy.optimize
 
 from simulation.ElectronSimulation import (
     ElectronSimulation,
@@ -167,8 +170,50 @@ class ElectronSimulationPlotter:
         plt.show()
 
     @staticmethod
-    def _calculate_average_density(densities_for_each):
+    def calculate_average_density(densities_for_each: numpy.typing.ArrayLike):
         return np.average(densities_for_each, axis=0)
+
+    @staticmethod
+    def occupation_curve_fit_function(number_of_electrons, time, omega, decay_time):
+        amplitude = number_of_electrons / 2
+        return amplitude * np.exp(-time / decay_time) * np.cos(omega * time) + amplitude
+
+    @classmethod
+    def _plot_densities_with_fit(
+        cls, initially_occupied_densities, initially_unoccupied_densities, times
+    ):
+        number_of_electrons = initially_occupied_densities[0]
+        initial_omega_guess = 100 / (times[-1] - times[0])
+        initial_decay_time_guess = (times[-1] - times[0]) / 4
+
+        (optimal_omega, optimal_decay_time), pcov = scipy.optimize.curve_fit(
+            lambda t, w, d: cls.occupation_curve_fit_function(
+                number_of_electrons, t, w, d
+            ),
+            times,
+            initially_occupied_densities,
+            p0=[initial_omega_guess, initial_decay_time_guess],
+        )
+
+        print("omega", optimal_omega)
+        print("decay_time", optimal_decay_time)
+        print(pcov)
+
+        (fig, ax) = cls._plot_total_number_against_time(
+            number_in_each_state={
+                "fcc": initially_occupied_densities,
+                "hcp": initially_unoccupied_densities,
+                "fcc_fit": cls.occupation_curve_fit_function(
+                    initially_occupied_densities[0],
+                    times,
+                    optimal_omega,
+                    optimal_decay_time,
+                ),
+            },
+            times=times,
+        )
+        ax.set_title("Plot of average Electron Density Against Time")
+        return (fig, ax)
 
     @classmethod
     def _plot_electron_densities_for_each(
@@ -186,19 +231,16 @@ class ElectronSimulationPlotter:
         )
         plt.show()
 
-        average_densities = cls._calculate_average_density(electron_densities_for_each)
+        average_densities = cls.calculate_average_density(electron_densities_for_each)
 
         initially_occupied_densities = [d[0] for d in average_densities]
         initially_unoccupied_densities = [d[1] for d in average_densities]
 
-        (fig, ax) = cls._plot_total_number_against_time(
-            number_in_each_state={
-                "fcc": [sum(x) for x in initially_occupied_densities],
-                "hcp": [sum(x) for x in initially_unoccupied_densities],
-            },
-            times=times,
+        (fig, ax) = cls._plot_densities_with_fit(
+            [sum(x) for x in initially_occupied_densities],
+            [sum(x) for x in initially_unoccupied_densities],
+            times,
         )
-        ax.set_title("Plot of average Electron Density Against Time")
         plt.show()
 
         target_number = sum(initially_occupied_densities[0]) / 2
@@ -278,6 +320,7 @@ class ElectronSimulationPlotter:
             sim.electron_energies,
             period_of_noise_fluctuation,
         )
+        return electron_densities_for_each
 
     @classmethod
     def plot_tunneling_overlaps(
@@ -293,7 +336,7 @@ def plot_average_densities_example():
     config = ElectronSimulationConfig(
         hbar=1,
         boltzmann_energy=1,
-        electron_energies=np.linspace(0, 100, 6),
+        electron_energies=np.linspace(0, 100, 6).tolist(),
         hydrogen_energies=[0, 0],
         block_factors=[[1, 0.001], [0.001, 1]],
         q_prefactor=1,
@@ -302,12 +345,12 @@ def plot_average_densities_example():
 
     ElectronSimulationPlotter.plot_random_system_evolved_coherently(
         simulator,
-        np.linspace(0, 10000, 1000),
+        np.linspace(0, 10000, 1000).tolist(),
     )
 
     ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
         simulator,
-        np.linspace(0, 10000, 1000),
+        np.linspace(0, 10000, 1000).tolist(),
         average_over=100,
     )
 
@@ -318,9 +361,8 @@ def plot_thermal_example():
     config = ElectronSimulationConfig(
         hbar=1,
         boltzmann_energy=10,
-        electron_energies=np.linspace(0, 100, 8),
+        electron_energies=np.linspace(0, 100, 8).tolist(),
         hydrogen_energies=[0, 0],
-        temperature=30,
         block_factors=[[1, 0.001], [0.001, 1]],
         q_prefactor=1,
         electron_energy_jitter=4,
@@ -329,13 +371,13 @@ def plot_thermal_example():
 
     ElectronSimulationPlotter.plot_random_system_evolved_coherently(
         simulator,
-        times=np.linspace(0, 10, 1000),
+        times=np.linspace(0, 10, 1000).tolist(),
         thermal=True,
     )
 
     ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
         simulator,
-        times=np.linspace(0, 40000, 1000),
+        times=np.linspace(0, 40000, 1000).tolist(),
         average_over=20,
         thermal=True,
         jitter_for_each=True,
@@ -345,9 +387,9 @@ def plot_thermal_example():
 def plot_state_overlaps_example():
     config = ElectronSimulationConfig(
         hbar=1,
-        electron_energies=np.linspace(0, 100, 4),
+        electron_energies=np.linspace(0, 100, 4).tolist(),
         hydrogen_energies=[0, 0],
-        temperature=200,
+        boltzmann_energy=200,
         block_factors=[[1, 0.001], [0.001, 1]],
         q_prefactor=1,
     )
