@@ -20,9 +20,12 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
         bandwidth: float,
         number_of_electrons: int,
     ) -> None:
-        self.number_of_electrons = number_of_electrons
         super().__init__(
-            material_properties, temperature, number_of_states_per_band, bandwidth
+            material_properties,
+            temperature,
+            number_of_states_per_band,
+            number_of_electrons,
+            bandwidth,
         )
 
     @property
@@ -35,49 +38,14 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
     def _get_fraction_of_occupation(self):
         return self.number_of_electrons / self.number_of_states_per_band
 
-    # Equal to beta (E - Ef)
-    def _calculate_average_factor_from_fermi_energy(self):
-        return np.log((1 / self._get_fraction_of_occupation()) - 1)
-
-    # Equal to (E - Ef)
-    def _calculate_average_energy_from_fermi_energy(self):
-        return (
-            self.boltzmann_energy * self._calculate_average_factor_from_fermi_energy()
-        )
-
-    def _calculate_average_state_energy(self):
-        return (
-            self._get_fermi_energy()
-            + self._calculate_average_energy_from_fermi_energy()
-        )
-
-    def calculate_occupation_of_lower_band(self):
-        # beta * egap
-        energy_gap_exponent_factor = (
-            self.hydrogen_energy_difference / self.boltzmann_energy
-        )
-        exponent_factor = (
-            self._calculate_average_factor_from_fermi_energy()
-            - energy_gap_exponent_factor
-        )
-        return 1 / (1 + np.exp(exponent_factor))
-
-    def calculate_effective_tunnelling_rate(self, tuneling_time):
-
-        tunnelling_rate = 1 / tuneling_time
-        return self.calculate_occupation_of_lower_band() * tunnelling_rate
-
-    def _get_energy_jitter(self):
-        return 0.5 * self._get_energy_spacing()
-
 
 if __name__ == "__main__":
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         OneBandMaterialSimulator,
         temperature=150,
-        number_of_states_per_band=9,
+        number_of_states_per_band=13,
+        number_of_electrons=1,
         target_frequency=1 * 10 ** (9),
-        number_of_electrons=4,
     )
 
     # nickel_sim.simulate_material(times=np.linspace(0, 0.001 * 10 ** -12, 1000))
@@ -86,7 +54,7 @@ if __name__ == "__main__":
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 2.5 * 10 ** -5, 2000),
+        times=np.linspace(0, 60 * 10 ** -5, 1000),
         average_over=10,
         jitter_electrons=True,
     )

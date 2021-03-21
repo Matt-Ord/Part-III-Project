@@ -141,21 +141,21 @@ class MaterialSimulator(ABC):
             **kwargs,
         )
 
-    def _occupation_curve_fit_function(self, time, omega, decay_time):
-        return ElectronSimulationPlotter.occupation_curve_fit_function(
-            self.number_of_electrons, time, omega, decay_time
-        )
+    # def _occupation_curve_fit_function(self, time, omega, decay_time):
+    #     return ElectronSimulationPlotter.occupation_curve_fit_function(
+    #         self.number_of_electrons, time, omega, decay_time
+    #     )
 
-    def _fit_electron_occupation_curve(self, times, initially_occupied_densities):
-        initial_omega_guess = 10 / (times[-1] - times[0])
-        initial_decay_time_guess = (times[-1] - times[0]) / 4
+    # def _fit_electron_occupation_curve(self, times, initially_occupied_densities):
+    #     initial_omega_guess = 10 / (times[-1] - times[0])
+    #     initial_decay_time_guess = (times[-1] - times[0]) / 4
 
-        return scipy.optimize.curve_fit(
-            lambda t, w, d: self._occupation_curve_fit_function,
-            times,
-            initially_occupied_densities,
-            p0=[initial_omega_guess, initial_decay_time_guess],
-        )
+    #     return scipy.optimize.curve_fit(
+    #         lambda t, w, d: self._occupation_curve_fit_function,
+    #         times,
+    #         initially_occupied_densities,
+    #         p0=[initial_omega_guess, initial_decay_time_guess],
+    #     )
 
     def simulate_average_densities(
         self, times, average_over=10, jitter_electrons=False, **kwargs

@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Generic, Type, TypeVar
+from typing import Any, Generic, Type, TypeVar
 import numpy as np
 import scipy.constants
 
@@ -23,9 +23,12 @@ class MultiBandMaterialSimulator(MaterialSimulator):
         material_properties: MaterialProperties,
         temperature: float,
         number_of_states_per_band: int,
+        number_of_electrons: int,
         bandwidth: float,
     ) -> None:
+        print(number_of_electrons)
         self.number_of_states_per_band = number_of_states_per_band
+        self.number_of_electrons = number_of_electrons
         self.bandwidth = bandwidth
         super().__init__(material_properties, temperature)
 
@@ -47,31 +50,33 @@ class MultiBandMaterialSimulator(MaterialSimulator):
         return self.bandwidth / self.number_of_states_per_band
 
     def _get_energy_jitter(self):
-        return 0.1 * self._get_energy_spacing()
+        return 0.5 * self._get_energy_spacing()
 
 
 class MultiBandMaterialSimulatorUtil(Generic[T]):
     @staticmethod
-    def _calculate_bandwidth(target_frequency):
+    def calculate_bandwidth(target_frequency):
         return scipy.constants.hbar * target_frequency / 2
 
     @classmethod
     def create(
         cls,
-        sim: Type[T],
+        sim: Any,
         material_properties: MaterialProperties,
         temperature,
         number_of_states_per_band,
+        number_of_electrons,
         target_frequency,
         *args,
         **kwargs
     ) -> T:
-        bandwidth = cls._calculate_bandwidth(target_frequency)
+        bandwidth = cls.calculate_bandwidth(target_frequency)
         return sim(
-            material_properties,
-            temperature,
-            number_of_states_per_band,
-            bandwidth,
+            material_properties=material_properties,
+            temperature=temperature,
+            number_of_states_per_band=number_of_states_per_band,
+            number_of_electrons=number_of_electrons,
+            bandwidth=bandwidth,
             *args,
             **kwargs
         )
@@ -84,16 +89,18 @@ class MultiBandNickelMaterialSimulatorUtil(MultiBandMaterialSimulatorUtil):
         sim: type[T],
         temperature,
         number_of_states_per_band,
+        number_of_electrons,
         target_frequency,
         *args,
         **kwargs
     ) -> T:
         return super().create(
             sim,
-            NICKEL_MATERIAL_PROPERTIES,
-            temperature,
-            number_of_states_per_band,
-            target_frequency,
+            material_properties=NICKEL_MATERIAL_PROPERTIES,
+            temperature=temperature,
+            number_of_states_per_band=number_of_states_per_band,
+            number_of_electrons=number_of_electrons,
+            target_frequency=target_frequency,
             *args,
             **kwargs
         )

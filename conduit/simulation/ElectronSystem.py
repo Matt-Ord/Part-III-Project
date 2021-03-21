@@ -196,7 +196,6 @@ class ElectronSystemUtil:
 
     def create_kinetic(self, hamiltonian, electron_energies, hydrogen_energies):
         basis_states = self.get_electron_basis_states()
-
         basis_electron_energies = np.sum(
             np.array(electron_energies) * np.array(basis_states), axis=1
         )
