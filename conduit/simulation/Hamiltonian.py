@@ -18,16 +18,16 @@ class Hamiltonian:
         self._matrix_representation = matrix_representation.copy()
 
     @property
-    def eigenvalues(self):
+    def eigenvalues(self) -> np.ndarray:
         if self._eigenvalues is None:
             self._calculate_eigenvalues_and_vectors()
-        return self._eigenvalues
+        return self._eigenvalues  # type: ignore
 
     @property
-    def eigenvectors(self):
+    def eigenvectors(self) -> np.ndarray:
         if self._eigenvectors is None:
             self._calculate_eigenvalues_and_vectors()
-        return self._eigenvectors
+        return self._eigenvectors  # type: ignore
 
     def _calculate_eigenvalues_and_vectors(self):
         self._eigenvalues, self._eigenvectors = np.linalg.eigh(
@@ -109,26 +109,26 @@ class Hamiltonian:
 
 class HamiltonianUtil:
     @staticmethod
-    def create_random(cls, number_of_states: int) -> Hamiltonian:
+    def create_random(_cls, number_of_states: int) -> Hamiltonian:
         random_matrix = (
             np.random.rand(number_of_states, number_of_states)
             + np.random.rand(number_of_states, number_of_states) * 1j
         )
-        return cls(random_matrix)
+        return _cls(random_matrix)
 
     @staticmethod
-    def create_random_hermitian(cls, number_of_states: int) -> Hamiltonian:
+    def create_random_hermitian(_cls, number_of_states: int) -> Hamiltonian:
         random_matrix = (
             np.random.rand(number_of_states, number_of_states)
             + np.random.rand(number_of_states, number_of_states) * 1j
         )
         hermitian_matrix = random_matrix + np.conj(random_matrix).T
-        return cls(hermitian_matrix)
+        return _cls(hermitian_matrix)
 
     @staticmethod
-    def create_diagonal(cls, energies: list):
+    def create_diagonal(_cls, energies: list):
         matrix = np.diag(energies)
-        return cls(matrix)
+        return _cls(matrix)
 
     @classmethod
     def create_block_identity(
@@ -138,11 +138,11 @@ class HamiltonianUtil:
         return cls.create_block(hamiltonian_cls, base_matrix, block_factors)
 
     @staticmethod
-    def create_block(cls, base_matrix, block_factors):
+    def create_block(_cls, base_matrix, block_factors):
         matrix_parts = [
             [block_value * base_matrix for block_value in r] for r in block_factors
         ]
-        return cls(np.block(matrix_parts))
+        return _cls(np.block(matrix_parts))
 
     @staticmethod
     def characterise_overlap(hamiltonian: Hamiltonian, state_1, state_2):

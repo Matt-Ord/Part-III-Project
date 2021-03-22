@@ -16,5 +16,5 @@ NICKEL_ENERGY_OFFSET_J = 1.522 * 10 ** (-21)
 NICKEL_MATERIAL_PROPERTIES = MaterialProperties(
     fermi_wavevector=1.175 * 10 ** (10),  # m^-1
     hydrogen_energies=[-NICKEL_ENERGY_OFFSET_J, NICKEL_ENERGY_OFFSET_J],
-    hydrogen_overlaps=[[1, 0.004], [0.004, 1]],  # Rough overlap!
+    hydrogen_overlaps=[[1, 0.0044], [0.0044, 1]],  # Rough overlap!
 )

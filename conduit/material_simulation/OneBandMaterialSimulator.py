@@ -42,8 +42,8 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
 if __name__ == "__main__":
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         OneBandMaterialSimulator,
-        temperature=150,
-        number_of_states_per_band=13,
+        temperature=120,
+        number_of_states_per_band=41,
         number_of_electrons=1,
         target_frequency=1 * 10 ** (9),
     )
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 60 * 10 ** -5, 1000),
+        times=np.linspace(0, 125 * 10 ** -5, 1000),
         average_over=10,
         jitter_electrons=True,
     )

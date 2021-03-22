@@ -52,24 +52,31 @@ class FinalResultsPlotter:
         plt.show()
 
 
+decay_rates_150K = {
+    "auto data log fit cosh": {
+        "measured": 17712703860.0,
+        "adjusted": 20301231441,
+    },
+    "manual data log fit cosh": {
+        "measured": 10569663508,
+        "adjusted": 12087970414,
+    },
+    "auto data cosh": {
+        "measured": 19986418992,
+        "adjusted": 22909917915,
+    },
+    "manual data cosh": {
+        "measured": 11367063687,
+        "adjusted": 13012572061,
+    },
+}
+decay_rates_120K = {
+    "auto data cosh": {
+        "measured": 12314098562,
+        "adjusted": 12036702533,
+    },
+}
 if __name__ == "__main__":
-    FinalResultsPlotter(
-        decay_rates={
-            "auto data log fit cosh": {
-                "measured": 17712703860,
-                "adjusted": 20301231441,
-            },
-            "manual data log fit cosh": {
-                "measured": 10569663508,
-                "adjusted": 12087970414,
-            },
-            "auto data cosh": {
-                "measured": 19986418992,
-                "adjusted": 22909917915,
-            },
-            "manual data cosh": {
-                "measured": 11367063687,
-                "adjusted": 13012572061,
-            },
-        }
-    ).plot_predicted_tunnelling_curve(np.linspace(0, 0.3 * 10 ** (-9), 1000))
+    FinalResultsPlotter(decay_rates=decay_rates_150K).plot_predicted_tunnelling_curve(
+        np.linspace(0, 0.3 * 10 ** (-9), 1000)
+    )

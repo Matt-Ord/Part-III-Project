@@ -71,6 +71,16 @@ class OneBandResultsAnalyser(ABC):
         )
         return 1 / (1 + np.exp(exponent_factor))
 
+    def calculate_occupation_of_higher_band(self, occupation_fraction):
+        # beta * egap
+        energy_gap_exponent_factor = self.energy_difference / self.boltzmann_energy
+        exponent_factor = (
+            self._calculate_factor_from_fermi_energy(occupation_fraction)
+            + energy_gap_exponent_factor
+        )
+        with np.errstate(over="ignore"):
+            return 1 / (1 + np.exp(exponent_factor))
+
     def plot_adjusted_occupation_against_occupation(self):
         fig, ax = plt.subplots(1)
         occupation_fractions = np.linspace(0.01, 0.99, 1000)

@@ -26,7 +26,6 @@ class MultiBandMaterialSimulator(MaterialSimulator):
         number_of_electrons: int,
         bandwidth: float,
     ) -> None:
-        print(number_of_electrons)
         self.number_of_states_per_band = number_of_states_per_band
         self.number_of_electrons = number_of_electrons
         self.bandwidth = bandwidth
