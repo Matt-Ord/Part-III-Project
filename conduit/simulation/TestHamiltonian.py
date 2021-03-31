@@ -100,6 +100,29 @@ class TestHamiltonian(unittest.TestCase):
             )
         )
 
+    def test_vectorised_recomposition_of_identity(self):
+        hamiltonian = HamiltonianUtil.create_diagonal(Hamiltonian, np.ones(5).tolist())
+        vector = np.random.rand(2, 5)
+        actual = hamiltonian.get_vector_of_multiple_eigen_decompositons(vector)
+        expected = np.array(
+            [hamiltonian.get_vector_of_eigen_decomposition(x) for x in vector]
+        )
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_vectorised_recomposition(self):
+        hamiltonian = HamiltonianUtil.create_random_hermitian(Hamiltonian, 5)
+        vector = np.random.rand(100, 5)
+        print(vector)
+        print(hamiltonian.get_vector_of_multiple_eigen_decompositons(vector))
+        print(
+            np.array([hamiltonian.get_vector_of_eigen_decomposition(x) for x in vector])
+        )
+        actual = hamiltonian.get_vector_of_multiple_eigen_decompositons(vector)
+        expected = np.array(
+            [hamiltonian.get_vector_of_eigen_decomposition(x) for x in vector]
+        )
+        self.assertTrue(np.allclose(actual, expected))
+
     def test_get_decomposition_after_time_with_zero_timestep(self):
         hamiltonian = HamiltonianUtil.create_random_hermitian(Hamiltonian, 5)
         initial_decomposition = np.random.rand(5)
@@ -134,6 +157,19 @@ class TestHamiltonian(unittest.TestCase):
         self.assertAlmostEqual(
             np.linalg.norm(initial_vector), np.linalg.norm(final_vector)
         )
+
+    def test_evolve_system_vector_vectorised(self):
+        hamiltonian = HamiltonianUtil.create_random_hermitian(Hamiltonian, 5)
+        initial_vector = np.random.rand(5)
+        times = np.random.rand(1000)
+        expected_final_vectors = np.array(
+            [hamiltonian.evolve_system_vector(initial_vector, time) for time in times]
+        )
+        actual_final_vectors = hamiltonian.evolve_system_vector_vectorised(
+            initial_vector, times
+        )
+
+        self.assertTrue(np.allclose(actual_final_vectors, expected_final_vectors))
 
 
 if __name__ == "__main__":

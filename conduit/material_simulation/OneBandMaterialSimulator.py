@@ -1,9 +1,11 @@
+from matplotlib.pyplot import title
 from material_simulation.MultiBandMaterialSimulator import (
     MultiBandMaterialSimulator,
     MultiBandNickelMaterialSimulatorUtil,
 )
-from properties.MaterialProperties import MaterialProperties
+from properties.MaterialProperties import MaterialProperties, NICKEL_MATERIAL_PROPERTIES
 import numpy as np
+import scipy.constants
 
 # Simulates the electron sysytem using a single
 # Closely packed band, and uses the theroetical
@@ -28,9 +30,7 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
             bandwidth,
         )
 
-    @property
-    def hydrogen_energies_for_simulation(self):
-        return [0, 0]
+    hydrogen_energies_for_simulation = [0, 0]
 
     def _generate_electron_energies(self):
         return self._get_band_energies()
@@ -39,12 +39,56 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
         return self.number_of_electrons / self.number_of_states_per_band
 
 
-if __name__ == "__main__":
+def plot_rough_one_band_simulation():
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         OneBandMaterialSimulator,
-        temperature=120,
-        number_of_states_per_band=41,
-        number_of_electrons=1,
+        temperature=150,
+        number_of_states_per_band=10,
+        number_of_electrons=5,
+        target_frequency=150 * scipy.constants.Boltzmann * 2 / scipy.constants.hbar,
+    )
+    print(nickel_sim._get_interaction_prefactor())
+    print(nickel_sim.electron_energies)
+
+    nickel_sim.plot_average_material(
+        times=np.linspace(0, 0.5 * 10 ** -9, 1000),
+        average_over=10,
+        jitter_electrons=True,
+        title="Plot of Electron Denstity against time\n"
+        + r"showing a tunnelling time of around $10^{-10}$ seconds",
+    )
+
+
+def plot_rough_simulation_with_hydrogen_energies():
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=10,
+        number_of_electrons=5,
+        target_frequency=150 * scipy.constants.Boltzmann * 2 / scipy.constants.hbar,
+    )
+    print(nickel_sim._get_interaction_prefactor())
+    print(nickel_sim.electron_energies)
+    nickel_sim.hydrogen_energies_for_simulation = (
+        NICKEL_MATERIAL_PROPERTIES.hydrogen_energies
+    )
+
+    nickel_sim.plot_average_material(
+        times=np.linspace(0, 0.5 * 10 ** -9, 1000),
+        average_over=10,
+        jitter_electrons=True,
+        title="Plot of Electron Denstity against time\n"
+        + r"with different hydrogen energies showing no tunnelling",
+    )
+
+
+if __name__ == "__main__":
+    plot_rough_simulation_with_hydrogen_energies()
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=10,
+        number_of_electrons=5,
         target_frequency=1 * 10 ** (9),
     )
 
@@ -54,7 +98,7 @@ if __name__ == "__main__":
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 125 * 10 ** -5, 1000),
+        times=np.linspace(0, 0.5 * 10 ** -9, 1000),
         average_over=10,
         jitter_electrons=True,
     )

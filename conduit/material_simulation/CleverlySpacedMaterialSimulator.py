@@ -19,17 +19,26 @@ class CleverlySpacedMaterialSimulator(MaterialSimulator):
         super().__init__(material_properties, temperature)
 
     def _generate_electron_energies(self):
-        return np.arange(self.number_of_bands) * self.hydrogen_energy_difference
+        return np.arange(self.number_of_bands) * self._get_energy_spacing()
 
     def _get_energy_spacing(self):
         return self.hydrogen_energy_difference
 
     @property
-    def hydrogen_energies(self):
-        return [0, 0.01 * self.boltzmann_energy]
+    def hydrogen_energies_for_simulation(self):
+        return [0, 0]
+
+    @property
+    def block_factors_for_simulation(self):
+        M = self.hydrogen_overlaps
+        d_factor = 1
+        return [
+            [M[0][0], d_factor * M[0][1]],
+            [d_factor * M[1][0], M[1][1]],
+        ]
 
     def _get_energy_jitter(self):
-        return 0.01 * self._get_energy_spacing()
+        return 0.2 * self._get_energy_spacing()
 
 
 class CleverlySpacedNickelMaterialSimulatorUtil:
@@ -56,12 +65,15 @@ if __name__ == "__main__":
     nickel_sim = CleverlySpacedNickelMaterialSimulatorUtil.create(
         CleverlySpacedMaterialSimulator,
         temperature=150,
-        number_of_bands=97,
-        number_of_electrons=96,
+        number_of_bands=10,
+        number_of_electrons=5,
+    )
+    nickel_sim.simulate_material(
+        times=np.linspace(0, 4 * 10 ** (-13), 1000),
     )
 
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 6 * 10 ** (1), 1000),
-        average_over=10,
-        jitter_electrons=False,
+        times=np.linspace(0, 2 * 10 ** (-12), 1000),
+        average_over=20,
+        jitter_electrons=True,
     )

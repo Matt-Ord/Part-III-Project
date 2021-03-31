@@ -14,19 +14,26 @@ from material_simulation.MaterialSimulator import MaterialSimulator
 
 
 class SimpleMaterialElectronSimulator(MaterialSimulator):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self, material_properties, temperature, number_of_states, **kwargs
+    ) -> None:
+        self.number_of_states = number_of_states
+        super().__init__(material_properties, temperature)
+        print(
+            self.electron_energies,
+            self.hydrogen_overlaps,
+            self._get_interaction_prefactor(),
+        )
 
     @property
     def hydrogen_energies_for_simualtion(self):
         return [0, 0]
 
-    def _generate_electron_energies(self, number_of_states):
-        d_k = 4 * (
-            self.boltzmann_energy
-            * scipy.constants.electron_mass
-            / (self.material_properties.fermi_wavevector * (scipy.constants.hbar ** 2))
-        )
+    def _generate_electron_energies(self):
+        d_e = 0.02 * self.boltzmann_energy
+
+        e_states = np.linspace(-d_e, d_e, self.number_of_states)
+        return e_states
 
         # k_states = np.linspace(
         #     self.material_properties.fermi_wavevector - d_k,
@@ -63,11 +70,11 @@ if __name__ == "__main__":
         temperature=150,
         number_of_states=8,
     )
-    nickel_sim.simulate_material(times=np.linspace(0, 0.001 * 10 ** -12, 1000))
+    nickel_sim.simulate_material(times=np.linspace(0, 1 * 10 ** 8, 1000))
 
     # nickel_sim.simulate_average_material(
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 3 * 10 ** -10, 500), average_over=40, jitter_electrons=True
+        times=np.linspace(0, 3 * 10 ** 8, 500), average_over=40, jitter_electrons=True
     )

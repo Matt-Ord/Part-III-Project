@@ -69,13 +69,14 @@ class ElectronSimulation:
         return self.config.boltzmann_energy
 
     @staticmethod
-    def get_electron_densities(electron_states):
+    def get_electron_densities(electron_systems: List[ElectronSystem]):
         electron_densities = [
-            state.get_electron_density_for_each_hydrogen() for state in electron_states
+            system.get_electron_density_for_each_hydrogen()
+            for system in electron_systems
         ]
         return electron_densities
 
-    def get_electron_states(
+    def get_electron_systems(
         self,
         initial_system: ElectronSystem,
         times: List[float],
@@ -84,27 +85,30 @@ class ElectronSimulation:
         if new_hamiltonian:
             self.hamiltonian = self._create_hamiltonian()
 
-        evolved_states = [
-            initial_system.evolve_system(self.hamiltonian, time, self.hbar)
-            for time in times
-        ]
-        return evolved_states
+        # evolved_states = [
+        #     initial_system.evolve_system(self.hamiltonian, time, self.hbar)
+        #     for time in times
+        # ]
+        evolved_systems = initial_system.evolve_system_vectorised(
+            self.hamiltonian, times, self.hbar
+        )
+        return evolved_systems
 
-    def get_electron_states_decoherently(
+    def get_electron_systems_decoherently(
         self, initial_system: ElectronSystem, times: List[float]
     ):
         timesteps = [end - start for (start, end) in zip(times[:-1], times[1:])]
 
-        evolved_states = [initial_system]
+        evolved_systems = [initial_system]
         for t in timesteps:
-            evolved_states.append(
-                evolved_states[-1].evolve_system_decoherently(
+            evolved_systems.append(
+                evolved_systems[-1].evolve_system_decoherently(
                     self.hamiltonian,
                     t,
                     self.hbar,
                 )
             )
-        return evolved_states
+        return evolved_systems
 
     @staticmethod
     def _randomise_energies(energies: np.ndarray, scale):
@@ -168,7 +172,7 @@ class ElectronSimulation:
         )
 
         electron_densities = self.get_electron_densities(
-            self.get_electron_states(initial_system, times)
+            self.get_electron_systems(initial_system, times)
         )
 
         return electron_densities
@@ -177,7 +181,7 @@ class ElectronSimulation:
         initial_system = self._setup_random_initial_system(thermal)
 
         electron_densities = self.get_electron_densities(
-            self.get_electron_states(initial_system, times)
+            self.get_electron_systems(initial_system, times)
         )
 
         return electron_densities
@@ -190,7 +194,7 @@ class ElectronSimulation:
         )
 
         electron_densities = self.get_electron_densities(
-            self.get_electron_states_decoherently(initial_system, times)
+            self.get_electron_systems_decoherently(initial_system, times)
         )
 
         return electron_densities
@@ -198,7 +202,7 @@ class ElectronSimulation:
     def _calculate_densities_for_each(self, initial_systems, times, jitter_for_each):
         electron_densities = [
             self.get_electron_densities(
-                self.get_electron_states(initial_system, times, jitter_for_each)
+                self.get_electron_systems(initial_system, times, jitter_for_each)
             )
             for initial_system in initial_systems
         ]
@@ -227,3 +231,17 @@ class ElectronSimulation:
             dummy_system
         ).characterise_tunnelling_overlaps(hamiltonian=self.hamiltonian)
         return overlaps
+
+
+if __name__ == "__main__":
+    config = ElectronSimulationConfig(
+        hbar=1,
+        electron_energies=np.linspace(0, 100, 12).tolist(),
+        hydrogen_energies=[0, 0],
+        boltzmann_energy=200,
+        block_factors=[[1, 0.001], [0.001, 1]],
+        q_prefactor=1,
+    )
+    simulator = ElectronSimulation(config)
+    simulator.simulate_random_system_coherently(np.linspace(0, 1000, 5000).tolist())
+    print("done")

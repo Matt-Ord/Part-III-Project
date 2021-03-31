@@ -8,7 +8,7 @@ from functools import cached_property
 from simulation.Hamiltonian import Hamiltonian
 
 
-class LindbaldSolver(ABC):
+class LindbladSolver(ABC):
     def __init__(self, times, temperature, initial_state=[1, 0, 0, 0]) -> None:
         self.times = times
         self.temperature = temperature
@@ -42,8 +42,16 @@ class LindbaldSolver(ABC):
         return self._soln["y"][3]
 
     @property
+    def fermi_wavevector(self):
+        return NICKEL_MATERIAL_PROPERTIES.fermi_wavevector
+
+    @property
     def boltzmaan_energy(self):
         return scipy.constants.Boltzmann * self.temperature
+
+    @staticmethod
+    def hydrogen_overlap(a, b):
+        return NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[a][b]
 
     @staticmethod
     def _get_delta_E_ab(a, b):
@@ -57,27 +65,23 @@ class LindbaldSolver(ABC):
         return cls._get_delta_E_ab(a, b) / scipy.constants.hbar
 
     @cached_property
-    def _get_gamma_prefactor(self):
+    def gamma_prefactor(self):
         # Calculation grouped to reduce floating point errors
-        a = scipy.constants.hbar / (scipy.constants.elementary_charge ** 2)
-        b = (self.boltzmaan_energy / scipy.constants.elementary_charge) ** 2
-        c = (scipy.constants.epsilon_0 ** 2) / (scipy.constants.electron_mass)
-        d = (16 * np.pi) / 3
+        a = (scipy.constants.hbar ** 2) / (scipy.constants.elementary_charge ** 2)
+        b = (
+            self.boltzmaan_energy * scipy.constants.hbar * (self.fermi_wavevector ** 2)
+        ) / (scipy.constants.elementary_charge ** 2)
+        c = (scipy.constants.epsilon_0 ** 2) / (scipy.constants.electron_mass ** 2)
+        d = 32 * np.sqrt(np.pi)
         return a * b * c * d
 
-    @staticmethod
-    def _get_gamma_hydrogen_overlap_prefactor(a, b):
-        return NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[a][b]
-
     def _get_gamma_energy_factor(self, a, b):
-        return np.exp(self._get_delta_E_ab(a, b) / self.boltzmaan_energy)
+        return np.exp(self._get_delta_E_ab(a, b) / (2 * self.boltzmaan_energy))
 
-    def _get_gamma_abcd(self, a, b, c, d):
-        constant_prefactor = self._get_gamma_prefactor
-        overlap_prefactor = self._get_gamma_hydrogen_overlap_prefactor(
-            a, b
-        ) * self._get_gamma_hydrogen_overlap_prefactor(d, c)
-        energy_factor = self._get_gamma_energy_factor(c, d)
+    def _get_gamma_abcd_omega_ij(self, a, b, c, d, i, j):
+        constant_prefactor = self.gamma_prefactor
+        overlap_prefactor = self.hydrogen_overlap(a, b) * self.hydrogen_overlap(d, c)
+        energy_factor = self._get_gamma_energy_factor(i, j)
         return constant_prefactor * overlap_prefactor * energy_factor
 
     @abstractmethod
@@ -149,23 +153,3 @@ class LindbaldSolver(ABC):
         if not np.array_equal(yvals, None):
             solver._soln = {"t": times, "y": yvals}
         return solver
-
-
-class LindbaldHamiltonianSolver(LindbaldSolver):
-    def _generate_equation_matrix_representation(self):
-        return [
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-        ]
-
-    def _solve_lindbald_equation(self):
-        hamiltonian = Hamiltonian(self._generate_equation_matrix_representation())
-        y = [
-            hamiltonian.evolve_system_vector(
-                self, self.initial_state, t, hbar=scipy.constants.hbar
-            )
-            for t in self.times
-        ]
-        self._soln = {"t": self.times, "y": np.array(y).T}

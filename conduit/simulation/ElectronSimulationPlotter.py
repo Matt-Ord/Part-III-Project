@@ -1,5 +1,5 @@
 from typing import Any, Dict, List
-import matplotlib as mpl
+from matplotlib import gridspec, colors, colorbar
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.random import beta
@@ -28,7 +28,7 @@ class ElectronSimulationPlotter:
     def _plot_varying_density_against_time(densities, times, energies):
         colour_cycle = plt.cm.Spectral(np.linspace(0, 1, len(densities)))
 
-        gs = mpl.gridspec.GridSpec(1, 6)
+        gs = gridspec.GridSpec(1, 6)
 
         ax1 = plt.subplot(gs[0, :-1])
         ax2 = plt.subplot(gs[0, -1])
@@ -41,14 +41,12 @@ class ElectronSimulationPlotter:
         # ax1.set_ylim([0, 1])
         ax1.set_xlabel("Energy")
         ax1.set_title("Plot of Electron Density against Energy")
-        norm = mpl.colors.Normalize(vmin=times[0], vmax=times[-1])
-        cmap = mpl.colors.ListedColormap(colour_cycle)
-        cb1 = mpl.colorbar.ColorbarBase(
-            ax2, cmap=cmap, norm=norm, orientation="vertical"
-        )
+        norm = colors.Normalize(vmin=times[0], vmax=times[-1])
+        cmap = colors.ListedColormap(colour_cycle)
+        cb1 = colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm, orientation="vertical")
         ax2.set_ylabel("Color against time")
 
-        plt.show()
+        return ax1.get_figure(), ax1
 
     @staticmethod
     def _plot_total_number_against_time(
@@ -102,7 +100,7 @@ class ElectronSimulationPlotter:
         return (fig, ax)
 
     @staticmethod
-    def _plot_total_number_against_time_for_each(
+    def plot_total_number_against_time_for_each(
         number_in_each_state_for_each: List[Dict[str, List[float]]],
         times,
     ):
@@ -134,6 +132,9 @@ class ElectronSimulationPlotter:
     def _plot_average_density_against_energy(densities, energies):
         fig, ax = plt.subplots()
         ax.plot(energies, np.average(densities, axis=0))
+        ax.errorbar(
+            energies, np.average(densities, axis=0), yerr=np.std(densities, axis=0)
+        )
         ax.set_ylabel("Electron Density")
         ax.set_xlabel("Energy")
         ax.set_title("Plot of Average Electron Density Against Energy")
@@ -149,9 +150,10 @@ class ElectronSimulationPlotter:
         )
         plt.show()
 
-        cls._plot_varying_density_against_time(
+        fig, ax = cls._plot_varying_density_against_time(
             initially_unoccupied_densities, times, energies
         )
+        ax.set_title("Plot of final state density against time")
         plt.show()
 
         (fig, ax) = cls._plot_average_density_against_energy(
@@ -163,6 +165,14 @@ class ElectronSimulationPlotter:
         cls._plot_total_number_against_time(
             number_in_each_state={
                 "fcc": [sum(x) for x in initially_occupied_densities],
+                "hcp": [sum(x) for x in initially_unoccupied_densities],
+            },
+            times=times,
+        )
+        plt.show()
+
+        fig, ax = cls._plot_total_number_against_time(
+            number_in_each_state={
                 "hcp": [sum(x) for x in initially_unoccupied_densities],
             },
             times=times,
@@ -219,7 +229,7 @@ class ElectronSimulationPlotter:
     def _plot_electron_densities_for_each(
         cls, electron_densities_for_each, times, energies, period_of_noise_fluctuation=0
     ):
-        cls._plot_total_number_against_time_for_each(
+        cls.plot_total_number_against_time_for_each(
             [
                 {
                     "fcc": [sum(x) for x in density[:, 0]],
@@ -331,6 +341,149 @@ class ElectronSimulationPlotter:
 
         print(overlaps)
 
+    @staticmethod
+    def _fermi_distribution(boltzmann_energy, E):
+        return 1 / (1 + np.exp(E / boltzmann_energy))
+
+    @classmethod
+    def plot_thermal_demonstration_centered_kf(
+        cls, config: ElectronSimulationConfig, repeats=10
+    ):
+        # Demonstrates the FD Distribution
+        single_n_config = ElectronSimulationConfig(
+            hbar=config.hbar,
+            boltzmann_energy=config.boltzmann_energy,
+            electron_energies=config.electron_energies,
+            hydrogen_energies=config.hydrogen_energies,
+            block_factors=config.block_factors,
+            q_prefactor=config.q_prefactor,
+            electron_energy_jitter=0,
+            number_of_electrons=None,
+        )
+        single_n_electron_densities = []
+        for _ in range(repeats):
+            sim = ElectronSimulation(single_n_config)
+            single_n_electron_densities.append(
+                sim.simulate_random_system_coherently(times=[0], thermal=True)[0][0]
+            )
+        print(single_n_electron_densities)
+        normalised_energies = np.array(config.electron_energies) - np.average(
+            config.electron_energies
+        )
+        (fig, ax) = cls._plot_average_density_against_energy(
+            single_n_electron_densities, normalised_energies.tolist()
+        )
+        energies_for_plot = np.linspace(
+            normalised_energies[0], normalised_energies[-1], 1000
+        )
+        ax.plot(
+            energies_for_plot,
+            cls._fermi_distribution(
+                config.boltzmann_energy,
+                energies_for_plot,
+            ),
+        )
+        ax.set_ylim([0, 1])
+        plt.show()
+
+    @classmethod
+    def plot_thermal_demonstration_off_center(
+        cls, config: ElectronSimulationConfig, dominant_occupation, repeats=10
+    ):
+        single_n_config = ElectronSimulationConfig(
+            hbar=config.hbar,
+            boltzmann_energy=config.boltzmann_energy,
+            electron_energies=config.electron_energies,
+            hydrogen_energies=config.hydrogen_energies,
+            block_factors=config.block_factors,
+            q_prefactor=config.q_prefactor,
+            electron_energy_jitter=0,
+            number_of_electrons=dominant_occupation,
+        )
+        single_n_electron_densities = []
+        for _ in range(repeats):
+            sim = ElectronSimulation(single_n_config)
+            single_n_electron_densities.append(
+                sim.simulate_random_system_coherently(times=[0], thermal=True)[0][0]
+            )
+
+        central_energy = config.boltzmann_energy * np.log(
+            dominant_occupation / (len(config.electron_energies) - dominant_occupation)
+        )
+        normalised_energies = (
+            np.array(config.electron_energies)
+            - np.average(config.electron_energies)
+            - central_energy
+        )
+        (fig, ax) = cls._plot_average_density_against_energy(
+            single_n_electron_densities, normalised_energies.tolist()
+        )
+        energies_for_plot = np.linspace(
+            normalised_energies[0], normalised_energies[-1], 1000
+        )
+        ax.plot(
+            energies_for_plot,
+            cls._fermi_distribution(
+                config.boltzmann_energy,
+                energies_for_plot,
+            ),
+        )
+        ax.set_ylim([0, 1])
+        plt.show()
+
+        # Corrected Plot
+        corrected_electron_densities = []
+        for _ in range(repeats):
+            total_electron_densities = []
+            total_thermal_weight = 0
+            for number_of_electrons in range(1, 1 + len(config.electron_energies)):
+                varying_n_config = ElectronSimulationConfig(
+                    hbar=config.hbar,
+                    boltzmann_energy=config.boltzmann_energy,
+                    electron_energies=config.electron_energies,
+                    hydrogen_energies=config.hydrogen_energies,
+                    block_factors=config.block_factors,
+                    q_prefactor=config.q_prefactor,
+                    electron_energy_jitter=0,
+                    number_of_electrons=number_of_electrons,
+                )
+                sim = ElectronSimulation(varying_n_config)
+                thermal_weight = np.exp(
+                    (central_energy * number_of_electrons) / (config.boltzmann_energy)
+                )
+                # thermal_weight = 1
+                number_of_states = sim.number_of_electron_states
+                number_of_states = 1
+                total_thermal_weight += thermal_weight * number_of_states
+                total_electron_densities.append(
+                    thermal_weight
+                    * number_of_states
+                    * sim.simulate_random_system_coherently(times=[0], thermal=True)[0][
+                        0
+                    ]
+                )
+
+            corrected_electron_densities.append(
+                np.sum(total_electron_densities, axis=0) / (total_thermal_weight)
+            )
+
+        (fig, ax) = cls._plot_average_density_against_energy(
+            corrected_electron_densities,
+            normalised_energies.tolist(),
+        )
+        energies_for_plot = np.linspace(
+            normalised_energies[0], normalised_energies[-1], 1000
+        )
+        ax.plot(
+            energies_for_plot,
+            cls._fermi_distribution(
+                config.boltzmann_energy,
+                energies_for_plot,
+            ),
+        )
+        # ax.set_ylim([0, 1])
+        plt.show()
+
 
 def plot_average_densities_example():
     config = ElectronSimulationConfig(
@@ -384,6 +537,36 @@ def plot_thermal_example():
     )
 
 
+def thermal_energy_investigation_centered_kf():
+    config = ElectronSimulationConfig(
+        hbar=1,
+        boltzmann_energy=10,
+        electron_energies=np.linspace(0, 100, 8).tolist(),
+        hydrogen_energies=[0, 0],
+        block_factors=[[1, 0.001], [0.001, 1]],
+        q_prefactor=1,
+        electron_energy_jitter=4,
+    )
+    ElectronSimulationPlotter.plot_thermal_demonstration_centered_kf(
+        config, repeats=1000
+    )
+
+
+def thermal_energy_investigation_off_center():
+    config = ElectronSimulationConfig(
+        hbar=1,
+        boltzmann_energy=10,
+        electron_energies=np.linspace(0, 100, 8).tolist(),
+        hydrogen_energies=[0, 0],
+        block_factors=[[1, 0.001], [0.001, 1]],
+        q_prefactor=1,
+        electron_energy_jitter=4,
+    )
+    ElectronSimulationPlotter.plot_thermal_demonstration_off_center(
+        config, dominant_occupation=3, repeats=10
+    )
+
+
 def plot_state_overlaps_example():
     config = ElectronSimulationConfig(
         hbar=1,
@@ -401,4 +584,4 @@ def plot_state_overlaps_example():
 if __name__ == "__main__":
     # plot_state_overlaps_example()
     # plot_average_densities_example()
-    plot_thermal_example()
+    thermal_energy_investigation_off_center()

@@ -1,8 +1,8 @@
-from FullLindbaldSolver import FullLindbaldSolver
+from FullLindbladSolver import FullLindbladSolver
 import numpy as np
 
 
-class NoEnergyGapLindbaldSolver(FullLindbaldSolver):
+class NoEnergyGapLindbladSolver(FullLindbladSolver):
 
     _max_step = 1 * 10 ** (-12)
 

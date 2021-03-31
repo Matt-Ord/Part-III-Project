@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="lindbald-simulator",
+    name="lindblad-simulator",
     version="0.0.1",
     author="Example Author",
     author_email="author@example.com",

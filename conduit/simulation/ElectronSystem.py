@@ -15,6 +15,15 @@ class ElectronSystem:
         )
         return type(self)(evolved_system_vector, self.electron_basis_states)
 
+    def evolve_system_vectorised(self, hamiltonian: Hamiltonian, times, hbar=1):
+        evolved_system_vectors = hamiltonian.evolve_system_vector_vectorised(
+            self.system_vector, times, hbar
+        )
+        return [
+            type(self)(evolved_system_vector, self.electron_basis_states)
+            for evolved_system_vector in evolved_system_vectors
+        ]
+
     def evolve_system_decoherently(self, hamiltonian: Hamiltonian, time, hbar=1):
         evolved_system_vector = hamiltonian.evolve_system_vector(
             self.system_vector, time, hbar

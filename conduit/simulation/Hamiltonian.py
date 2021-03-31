@@ -67,6 +67,27 @@ class Hamiltonian:
         )
         return final_state
 
+    def evolve_system_vector_vectorised(self, intial_state_vector, times, hbar=1):
+        initial_state_decomposition = self.get_eigen_decomposition_of_vector(
+            intial_state_vector
+        )
+        # In theory this should also be vectorised!
+        final_state_decompositons = np.array(
+            [
+                self.get_decomposition_after_time(
+                    initial_state_decomposition,
+                    time,
+                    hbar,
+                )
+                for time in times
+            ]
+        )
+
+        final_states = self.get_vector_of_multiple_eigen_decompositons(
+            final_state_decompositons,
+        )
+        return final_states
+
     def get_decomposition_after_time(self, decomposition, time, hbar=1):
         eigenvector_phase_shift = np.exp(1j * self.eigenvalues * time / hbar)
         return np.multiply(eigenvector_phase_shift, decomposition)
@@ -83,6 +104,9 @@ class Hamiltonian:
     def get_vector_of_eigen_decomposition(self, decomposition):
         return np.dot(self.eigenvectors, decomposition)
         return self.eigenvectors.T.dot(decomposition)
+
+    def get_vector_of_multiple_eigen_decompositons(self, decompositions):
+        return np.tensordot(self.eigenvectors, decompositions, axes=([1], [-1])).T
 
     def __add__(self, other: Hamiltonian) -> Hamiltonian:
         return type(self)(self._matrix_representation + other._matrix_representation)

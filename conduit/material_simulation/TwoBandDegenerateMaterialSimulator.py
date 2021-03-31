@@ -26,11 +26,16 @@ class TwoBandDegenerateMaterialSimulator(MultiBandMaterialSimulator):
         temperature: float,
         number_of_states_per_band: int,
         bandwidth: float,
+        number_of_electrons: int,
         energy_difference: float,
     ) -> None:
         self.energy_difference = energy_difference
         super().__init__(
-            material_properties, temperature, number_of_states_per_band, bandwidth
+            material_properties,
+            temperature,
+            number_of_states_per_band,
+            number_of_electrons,
+            bandwidth,
         )
 
     @property

@@ -11,6 +11,7 @@ from properties.MaterialProperties import (
     MaterialProperties,
 )
 from simulation.ElectronSimulationPlotter import ElectronSimulationPlotter
+import matplotlib.pyplot as plt
 
 
 class MaterialSimulator(ABC):
@@ -18,12 +19,10 @@ class MaterialSimulator(ABC):
         self,
         material_properties: MaterialProperties,
         temperature: float,
-        *args,
-        **kwargs,
     ) -> None:
         self.material_properties = material_properties
         self.temperature = temperature
-        self.electron_energies = self._generate_electron_energies(*args, **kwargs)
+        self.electron_energies = self._generate_electron_energies()
 
     number_of_electrons = None
 
@@ -47,6 +46,14 @@ class MaterialSimulator(ABC):
     def boltzmann_energy(self):
         return self.temperature * scipy.constants.Boltzmann
 
+    @property
+    def hydrogen_overlaps(self):
+        return self.material_properties.hydrogen_overlaps
+
+    @property
+    def block_factors_for_simulation(self):
+        return self.hydrogen_overlaps
+
     @abstractmethod
     def _generate_electron_energies(self, *args, **kwargs) -> List[float]:
         pass
@@ -63,6 +70,9 @@ class MaterialSimulator(ABC):
         return self._calculate_electron_energies(
             self.material_properties.fermi_wavevector
         )
+
+    def _get_central_energy(self):
+        return self._get_fermi_energy()
 
     # @abstractmethod
     # def _get_wavevector_spacing(self):
@@ -82,7 +92,7 @@ class MaterialSimulator(ABC):
         prefactor = (scipy.constants.pi ** 2) * (
             scipy.constants.hbar ** 2 / scipy.constants.m_e
         ) ** (3 / 2)
-        energy_factor = (2 * self._get_fermi_energy()) ** (-1 / 2)
+        energy_factor = (2 * self._get_central_energy()) ** (-1 / 2)
 
         return prefactor * energy_factor / energy_spacing
 
@@ -108,7 +118,7 @@ class MaterialSimulator(ABC):
                 boltzmann_energy=self.boltzmann_energy,
                 electron_energies=self.electron_energies,
                 hydrogen_energies=self.hydrogen_energies_for_simulation,
-                block_factors=self.material_properties.hydrogen_overlaps,
+                block_factors=self.block_factors_for_simulation,
                 q_prefactor=self._get_interaction_prefactor(),
                 electron_energy_jitter=electron_energy_jitter,
                 number_of_electrons=self.number_of_electrons,
@@ -125,6 +135,35 @@ class MaterialSimulator(ABC):
             times,
             thermal=True,
         )
+
+    def plot_average_material(
+        self,
+        times,
+        average_over=10,
+        jitter_electrons=False,
+        title="",
+    ):
+        sim = self._create_simulation(jitter_electrons)
+        electron_densities_for_each = sim.simulate_random_system_coherently_for_each(
+            times,
+            average_over=average_over,
+            thermal=True,
+            jitter_for_each=jitter_electrons,
+        )
+
+        fig, ax = ElectronSimulationPlotter.plot_total_number_against_time_for_each(
+            [
+                {
+                    "fcc": [sum(x) for x in density[:, 0]],
+                    "hcp": [sum(x) for x in density[:, 1]],
+                }
+                for density in electron_densities_for_each
+            ],
+            times,
+        )
+        ax.set_title(title)
+        ax.set_xlabel("Time / s")
+        plt.show()
 
     def simulate_average_material(
         self, times, average_over=10, jitter_electrons=False, **kwargs
