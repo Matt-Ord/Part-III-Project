@@ -76,7 +76,13 @@ decay_rates_120K = {
         "adjusted": 12036702533,
     },
 }
+decay_rates_150K_fixed = {
+    "manual quadratic data": {
+        "measured": 2 * 3 * 310831069.0,
+        "adjusted": 2 * 3 * 364875153,
+    },
+}
 if __name__ == "__main__":
-    FinalResultsPlotter(decay_rates=decay_rates_150K).plot_predicted_tunnelling_curve(
-        np.linspace(0, 0.3 * 10 ** (-9), 1000)
-    )
+    FinalResultsPlotter(
+        decay_rates=decay_rates_150K_fixed
+    ).plot_predicted_tunnelling_curve(np.linspace(0, 1 * 10 ** (-9), 1000))

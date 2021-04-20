@@ -110,7 +110,7 @@ class MaterialSimulator(ABC):
     def _get_energy_jitter(self):
         return 0
 
-    def _create_simulation(self, jitter_electrons=False):
+    def _create_simulation(self, jitter_electrons=False, initial_occupancy=1):
         electron_energy_jitter = self._get_energy_jitter() if jitter_electrons else 0
         sim = ElectronSimulation(
             ElectronSimulationConfig(
@@ -122,13 +122,16 @@ class MaterialSimulator(ABC):
                 q_prefactor=self._get_interaction_prefactor(),
                 electron_energy_jitter=electron_energy_jitter,
                 number_of_electrons=self.number_of_electrons,
+                initial_occupancy=initial_occupancy,
             )
         )
         return sim
 
-    def simulate_material(self, times, jitter_electrons=False):
+    def simulate_material(
+        self, times: List[float], jitter_electrons: bool = False, initial_occupancy=1
+    ):
 
-        sim = self._create_simulation(jitter_electrons)
+        sim = self._create_simulation(jitter_electrons, initial_occupancy)
 
         ElectronSimulationPlotter.plot_random_system_evolved_coherently(
             sim,
@@ -166,10 +169,15 @@ class MaterialSimulator(ABC):
         plt.show()
 
     def simulate_average_material(
-        self, times, average_over=10, jitter_electrons=False, **kwargs
+        self,
+        times: list[float],
+        average_over=10,
+        jitter_electrons=False,
+        initial_occupancy=0.5,
+        **kwargs
     ):
 
-        sim = self._create_simulation(jitter_electrons)
+        sim = self._create_simulation(jitter_electrons, initial_occupancy)
 
         ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
             sim,

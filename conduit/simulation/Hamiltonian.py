@@ -71,7 +71,7 @@ class Hamiltonian:
         initial_state_decomposition = self.get_eigen_decomposition_of_vector(
             intial_state_vector
         )
-        # In theory this should also be vectorised!
+        # In theory this could also be vectorised!
         final_state_decompositons = np.array(
             [
                 self.get_decomposition_after_time(

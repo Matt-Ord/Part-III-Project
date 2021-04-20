@@ -112,7 +112,7 @@ class ElectronSimulationPlotter:
         # Plot individual lines
         for i, number_in_each_state in enumerate(number_in_each_state_for_each):
             for (state_name, numbers) in number_in_each_state.items():
-                ax.plot(times, numbers, label=state_name, color=colour_cycle[i])
+                pass  # ax.plot(times, numbers, label=state_name, color=colour_cycle[i])
 
         # Plot average line
         for key in number_in_each_state_for_each[0].keys():
@@ -140,6 +140,15 @@ class ElectronSimulationPlotter:
         ax.set_title("Plot of Average Electron Density Against Energy")
         return (fig, ax)
 
+    @staticmethod
+    def _plot_normalistation_against_time(normalisations, times):
+        fig, ax = plt.subplots()
+        ax.plot(times, normalisations)
+        ax.set_ylabel("Normalisation")
+        ax.set_xlabel("Time")
+        ax.set_title("Plot of Normalisation against Time")
+        return (fig, ax)
+
     @classmethod
     def _plot_electron_densities(cls, electron_densities, times, energies):
         initially_occupied_densities = [d[0] for d in electron_densities]
@@ -154,6 +163,19 @@ class ElectronSimulationPlotter:
             initially_unoccupied_densities, times, energies
         )
         ax.set_title("Plot of final state density against time")
+        plt.show()
+
+        fig, ax = cls._plot_varying_density_against_time(
+            [
+                a + b
+                for (a, b) in zip(
+                    initially_occupied_densities, initially_unoccupied_densities
+                )
+            ],
+            times,
+            energies,
+        )
+        ax.set_title("Plot of combined density against time")
         plt.show()
 
         (fig, ax) = cls._plot_average_density_against_energy(
@@ -346,6 +368,18 @@ class ElectronSimulationPlotter:
         return 1 / (1 + np.exp(E / boltzmann_energy))
 
     @classmethod
+    def plot_normalisation_demonstration(
+        cls, config: ElectronSimulationConfig, times: list[float]
+    ):
+        sim = ElectronSimulation(config)
+        normalisations = sim.simulate_random_system_normalisations_coherently(
+            times, thermal=True
+        )
+
+        (fig, ax) = cls._plot_normalistation_against_time(normalisations, times)
+        plt.show()
+
+    @classmethod
     def plot_thermal_demonstration_centered_kf(
         cls, config: ElectronSimulationConfig, repeats=10
     ):
@@ -364,7 +398,12 @@ class ElectronSimulationPlotter:
         for _ in range(repeats):
             sim = ElectronSimulation(single_n_config)
             single_n_electron_densities.append(
-                sim.simulate_random_system_coherently(times=[0], thermal=True)[0][0]
+                np.sum(
+                    sim.simulate_random_system_coherently(times=[500000], thermal=True)[
+                        0
+                    ],
+                    axis=0,
+                )
             )
         print(single_n_electron_densities)
         normalised_energies = np.array(config.electron_energies) - np.average(
@@ -508,6 +547,21 @@ def plot_average_densities_example():
     )
 
 
+def plot_normalisation_example():
+    config = ElectronSimulationConfig(
+        hbar=1,
+        boltzmann_energy=10,
+        electron_energies=np.linspace(0, 100, 8).tolist(),
+        hydrogen_energies=[0, 0],
+        block_factors=[[1, 0.001], [0.001, 1]],
+        q_prefactor=1,
+        electron_energy_jitter=4,
+    )
+    ElectronSimulationPlotter.plot_normalisation_demonstration(
+        config, times=np.linspace(0, 1000, 1000).tolist()
+    )
+
+
 def plot_thermal_example():
     # Low temp 10
     # High temp 30
@@ -540,15 +594,15 @@ def plot_thermal_example():
 def thermal_energy_investigation_centered_kf():
     config = ElectronSimulationConfig(
         hbar=1,
-        boltzmann_energy=10,
+        boltzmann_energy=1,
         electron_energies=np.linspace(0, 100, 8).tolist(),
         hydrogen_energies=[0, 0],
-        block_factors=[[1, 0.001], [0.001, 1]],
+        block_factors=[[1, 0.00001], [0.00001, 1]],
         q_prefactor=1,
         electron_energy_jitter=4,
     )
     ElectronSimulationPlotter.plot_thermal_demonstration_centered_kf(
-        config, repeats=1000
+        config, repeats=100
     )
 
 
@@ -584,4 +638,6 @@ def plot_state_overlaps_example():
 if __name__ == "__main__":
     # plot_state_overlaps_example()
     # plot_average_densities_example()
-    thermal_energy_investigation_off_center()
+    # plot_normalisation_example()
+    thermal_energy_investigation_centered_kf()
+    # thermal_energy_investigation_off_center()

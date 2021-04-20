@@ -1,6 +1,6 @@
 from typing import Callable
 import numpy as np
-import scipy
+import scipy.constants
 from simulation.Hamiltonian import Hamiltonian, HamiltonianUtil
 
 
@@ -42,6 +42,9 @@ class ElectronSystem:
 
     def _get_state_probabilities(self):
         return np.abs(self.system_vector) ** 2
+
+    def get_normalisation(self):
+        return np.sum(self._get_state_probabilities())
 
     def get_number_of_electron_states(self):
         return self.electron_basis_states.shape[0]
@@ -123,20 +126,21 @@ class ElectronSystemUtil:
     # Creates a random state with probabilities weighted
     # exponentially by the relevant boltzmann factors
     @staticmethod
-    def _create_random_state_vector(boltzmann_factors, hydrogen_state):
+    def _create_random_state_vector(boltzmann_factors, initial_occupancy):
         boltzmann_probabilities = np.exp(-boltzmann_factors / 2)
-        filled_states = [
-            probability * np.random.normal() * np.exp(2j * np.pi * np.random.rand())
-            for probability in boltzmann_probabilities
-        ]
+        state_probabilities = np.array(
+            [
+                probability * np.random.normal() * np.exp(2j * np.pi * np.random.rand())
+                for probability in boltzmann_probabilities
+            ]
+        )
 
-        empty_states = np.zeros_like(boltzmann_factors)
-
-        if hydrogen_state == 0:
-            overall_state = np.concatenate([filled_states, empty_states])
-        else:
-            overall_state = np.concatenate([empty_states, filled_states])
-
+        overall_state = np.concatenate(
+            [
+                initial_occupancy * state_probabilities,
+                (1 - initial_occupancy) * state_probabilities,
+            ]
+        )
         normalised_overall_state = overall_state / np.linalg.norm(overall_state)
         return normalised_overall_state
 
@@ -159,8 +163,8 @@ class ElectronSystemUtil:
         system,
         number_of_electron_states,
         number_of_electrons,
-        hydrogen_state=0,
         boltzmann_factors=None,
+        initial_occupancy=1,
     ):
         if boltzmann_factors is None:
             boltzmann_factors = np.zeros(number_of_electron_states)
@@ -176,7 +180,7 @@ class ElectronSystemUtil:
         )
 
         state_vector = cls._create_random_state_vector(
-            multi_electron_boltzmann_factors, hydrogen_state
+            multi_electron_boltzmann_factors, initial_occupancy
         )
 
         return system(state_vector, electron_basis_states)
@@ -224,8 +228,9 @@ class ElectronSystemUtil:
             hamiltonian, states_in_each_block, block_factors
         )
 
-    @staticmethod
+    @classmethod
     def _calculate_q_dependant_single_hop_strength(
+        cls,
         state_a: np.ndarray,
         state_b: np.ndarray,
         k_values: np.ndarray,
@@ -237,7 +242,23 @@ class ElectronSystemUtil:
             return 0
         k_differences = k_values * differences
         q = np.abs(sum(k_differences))
-        return q_factor(q)
+        if np.count_nonzero(differences) != 2:
+            return q_factor(q)
+        return q_factor(q) * cls.exchange_sign(state_a, state_b)
+
+    # calculates the fermion exchange sign
+    # assuming only one exchange
+    @staticmethod
+    def exchange_sign(initial_electron_state, final_electron_state):
+        difference = initial_electron_state - final_electron_state
+
+        exchanged_index = np.argwhere(difference != 0)[:, 0]
+        number_of_exchanged_electrons = np.count_nonzero(
+            initial_electron_state[exchanged_index[0] + 1 : exchanged_index[1]]
+        )
+        if number_of_exchanged_electrons % 2 == 0:
+            return 1
+        return -1
 
     @classmethod
     def _has_at_most_one_hop(cls, state_a, state_b):
@@ -257,7 +278,7 @@ class ElectronSystemUtil:
         return self._generate_base_matrix(strength_function)
 
     def _generate_base_matrix(
-        self, strength_function: Callable[[np.ndarray, np.ndarray], bool]
+        self, strength_function: Callable[[np.ndarray, np.ndarray], float]
     ) -> np.ndarray:
         states_in_each_block = self.get_number_of_electron_states()
         electron_basis_states = self.get_electron_basis_states()

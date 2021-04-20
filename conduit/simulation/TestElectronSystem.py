@@ -1,8 +1,9 @@
+from typing import final
 import unittest
 from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
 import numpy as np
 
-from simulation.Hamiltonian import Hamiltonian
+from simulation.Hamiltonian import Hamiltonian, HamiltonianUtil
 
 
 class TestElectronSystem(unittest.TestCase):
@@ -66,6 +67,29 @@ class TestElectronSystem(unittest.TestCase):
         print(hamiltonian)
         print(system)
 
+    def test_exchange_factor_odd(self):
+        initial_state = np.array([0, 0, 1, 0, 1])
+        final_state = np.array([1, 0, 1, 0, 0])
+        sign = ElectronSystemUtil.exchange_sign(initial_state, final_state)
+        self.assertEqual(sign, -1)
+        sign = ElectronSystemUtil.exchange_sign(final_state, initial_state)
+        self.assertEqual(sign, -1)
+
+        initial_state = np.array([1, 0, 1, 1, 1])
+        final_state = np.array([1, 1, 1, 0, 1])
+        sign = ElectronSystemUtil.exchange_sign(initial_state, final_state)
+        self.assertEqual(sign, -1)
+        sign = ElectronSystemUtil.exchange_sign(final_state, initial_state)
+        self.assertEqual(sign, -1)
+
+    def test_exchange_factor_even(self):
+        initial_state = np.array([0, 0, 1, 1, 0, 1])
+        final_state = np.array([1, 0, 1, 1, 0, 0])
+        sign = ElectronSystemUtil.exchange_sign(initial_state, final_state)
+        self.assertEqual(sign, 1)
+        sign = ElectronSystemUtil.exchange_sign(final_state, initial_state)
+        self.assertEqual(sign, 1)
+
     def test_generate_hopping_hamiltonian_is_hermitian(self):
         hydrogen_state = 0  # np.random.choice([0, 1])
         electron_state = [1, 1, 0, 0]
@@ -119,7 +143,7 @@ class TestElectronSystem(unittest.TestCase):
             ElectronSystem, electron_state, hydrogen_state
         )
 
-        def strength_function(x, y) -> bool:
+        def strength_function(x, y) -> float:
             return (x == y).all()
 
         actual_base_matrix = ElectronSystemUtil.given(system)._generate_base_matrix(
@@ -143,12 +167,12 @@ class TestElectronSystem(unittest.TestCase):
             system
         )._generate_single_hop_constant_base_matrix()
         expected_base_matrix = [
-            [1, 1, 1, 1, 1, 0],
-            [1, 1, 1, 1, 0, 1],
-            [1, 1, 1, 0, 1, 1],
+            [1, 1, -1, 1, -1, 0],
+            [1, 1, 1, 1, 0, -1],
+            [-1, 1, 1, 0, 1, -1],
             [1, 1, 0, 1, 1, 1],
-            [1, 0, 1, 1, 1, 1],
-            [0, 1, 1, 1, 1, 1],
+            [-1, 0, 1, 1, 1, 1],
+            [0, -1, -1, 1, 1, 1],
         ]
         self.assertCountEqual(expected_base_matrix, actual_base_matrix.tolist())
 

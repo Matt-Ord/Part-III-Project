@@ -24,29 +24,32 @@ class TwoBandMaterialSimulator(MultiBandMaterialSimulator):
     # def hydrogen_energies_for_simulation(self):
     #     return [0, 0]
 
-    @property
-    def block_factors_for_simulation(self):
-        M = self.hydrogen_overlaps
-        d_factor = 500
-        return [
-            [M[0][0], d_factor * M[0][1]],
-            [d_factor * M[1][0], M[1][1]],
-        ]
+    # @property
+    # def block_factors_for_simulation(self):
+    #     M = self.hydrogen_overlaps
+    #     d_factor = 500
+    #     return [
+    #         [M[0][0], d_factor * M[0][1]],
+    #         [d_factor * M[1][0], M[1][1]],
+    #     ]
 
 
 if __name__ == "__main__":
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         TwoBandMaterialSimulator,
         temperature=150,
-        number_of_states_per_band=6,
+        number_of_states_per_band=4,
         number_of_electrons=4,
-        target_frequency=100 * 10 ** (9),
+        target_frequency=1 * 10 ** (9),
     )
 
-    nickel_sim.simulate_material(
-        times=np.linspace(0, (4 / 500) * 10 ** -7, 1000),
-    )
-
-    # nickel_sim.simulate_average_material(
-    #     times=np.linspace(0, 4 * 10 ** -4, 1), average_over=1, jitter_electrons=True
+    # nickel_sim.simulate_material(
+    #     times=np.linspace(0, 1 * 10 ** -5, 1000).tolist(), initial_occupancy=0.5
     # )
+
+    nickel_sim.simulate_average_material(
+        times=np.linspace(0, 1 * 10 ** -5, 100).tolist(),
+        average_over=10,
+        jitter_electrons=True,
+        initial_occupancy=0.6,
+    )

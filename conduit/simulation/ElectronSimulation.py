@@ -16,6 +16,7 @@ class ElectronSimulationConfig(NamedTuple):
     q_prefactor: float = 1
     electron_energy_jitter: float = 0
     number_of_electrons: int | None = None
+    initial_occupancy: float = 1
 
 
 class ElectronSimulation:
@@ -68,12 +69,21 @@ class ElectronSimulation:
     def boltzmann_energy(self):
         return self.config.boltzmann_energy
 
+    @property
+    def initial_occupancy(self):
+        return self.config.initial_occupancy
+
     @staticmethod
     def get_electron_densities(electron_systems: List[ElectronSystem]):
         electron_densities = [
             system.get_electron_density_for_each_hydrogen()
             for system in electron_systems
         ]
+        return electron_densities
+
+    @staticmethod
+    def get_normalisations(electron_systems: List[ElectronSystem]):
+        electron_densities = [system.get_normalisation() for system in electron_systems]
         return electron_densities
 
     def get_electron_systems(
@@ -148,8 +158,6 @@ class ElectronSimulation:
         return initial_system
 
     def _setup_random_initial_system(self, thermal=False):
-        hydrogen_state = 0
-
         boltzmann_factors = None
         if thermal:
             energy_offsets = self.electron_energies - np.average(self.electron_energies)
@@ -159,8 +167,8 @@ class ElectronSimulation:
             ElectronSystem,
             self.number_of_electron_states,
             self.number_of_electrons,
-            hydrogen_state,
             boltzmann_factors,
+            self.initial_occupancy,
         )
         return initial_system
 
@@ -185,6 +193,17 @@ class ElectronSimulation:
         )
 
         return electron_densities
+
+    def simulate_random_system_normalisations_coherently(
+        self, times: List[float], thermal=False
+    ):
+        initial_system = self._setup_random_initial_system(thermal)
+
+        normalisation = self.get_normalisations(
+            self.get_electron_systems(initial_system, times)
+        )
+
+        return normalisation
 
     def simulate_system_decoherently(
         self, times: List[float], initial_electron_state_vector=None

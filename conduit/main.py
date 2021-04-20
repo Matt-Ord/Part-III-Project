@@ -1,5 +1,3 @@
-import numpy as np
-
 if __name__ == "__main__":
     # Works for 14C7, takes about 1 minute
     # about 4 mins to decompose into eigenvectors
@@ -11,4 +9,4 @@ if __name__ == "__main__":
 
     # a = np.random.rand(10, 10) + 1j * np.random.rand(10, 10)
     # a = a + np.conj(a.T)
-    test = {}
+    pass
