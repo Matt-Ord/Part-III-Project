@@ -268,25 +268,25 @@ class ElectronSimulationPlotter:
         initially_occupied_densities = [d[0] for d in average_densities]
         initially_unoccupied_densities = [d[1] for d in average_densities]
 
-        (fig, ax) = cls._plot_densities_with_fit(
-            [sum(x) for x in initially_occupied_densities],
-            [sum(x) for x in initially_unoccupied_densities],
-            times,
-        )
-        plt.show()
+        # (fig, ax) = cls._plot_densities_with_fit(
+        #     [sum(x) for x in initially_occupied_densities],
+        #     [sum(x) for x in initially_unoccupied_densities],
+        #     times,
+        # )
+        # plt.show()
 
-        target_number = sum(initially_occupied_densities[0]) / 2
-        (fig, ax) = cls._plot_average_number_deviation_against_time(
-            target_numbers={key: target_number for key in ["fcc", "hcp"]},
-            number_in_each_state={
-                "fcc": [sum(x) for x in initially_occupied_densities],
-                "hcp": [sum(x) for x in initially_unoccupied_densities],
-            },
-            times=times,
-            period_of_noise_fluctuation=period_of_noise_fluctuation,
-        )
-        ax.set_ylim([0, None])
-        plt.show()
+        # target_number = sum(initially_occupied_densities[0]) / 2
+        # (fig, ax) = cls._plot_average_number_deviation_against_time(
+        #     target_numbers={key: target_number for key in ["fcc", "hcp"]},
+        #     number_in_each_state={
+        #         "fcc": [sum(x) for x in initially_occupied_densities],
+        #         "hcp": [sum(x) for x in initially_unoccupied_densities],
+        #     },
+        #     times=times,
+        #     period_of_noise_fluctuation=period_of_noise_fluctuation,
+        # )
+        # ax.set_ylim([0, None])
+        # plt.show()
 
         (fig, ax) = cls._plot_average_density_against_energy(
             initially_occupied_densities, energies

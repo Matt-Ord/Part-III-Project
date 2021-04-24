@@ -39,6 +39,26 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
         return self.number_of_electrons / self.number_of_states_per_band
 
 
+def plot_simulation_energy_levels():
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=10,
+        number_of_electrons=5,
+        target_frequency=1 * 10 ** (9),
+    )
+
+    nickel_sim.plot_material_energy_states()
+
+    # add small hydrogen energy levels
+    nickel_sim.hydrogen_energies_for_simulation = [0, nickel_sim._get_energy_spacing()]  # type: ignore
+    nickel_sim.plot_material_energy_states()
+
+    # add large hydrogen energy levels
+    nickel_sim.hydrogen_energies_for_simulation = [0, 1000 * nickel_sim._get_energy_spacing()]  # type: ignore
+    nickel_sim.plot_material_energy_states()
+
+
 def plot_rough_simulation_with_electron_densities():
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         OneBandMaterialSimulator,
@@ -101,14 +121,53 @@ def plot_rough_simulation_with_hydrogen_energies():
     )
 
 
-if __name__ == "__main__":
-    # plot_rough_simulation_with_hydrogen_energies()
-    # plot_rough_simulation_with_hydrogen_energies()
+def print_hamiltonian():
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
         OneBandMaterialSimulator,
         temperature=150,
-        number_of_states_per_band=4,
-        number_of_electrons=2,
+        number_of_states_per_band=2,
+        number_of_electrons=1,
+        target_frequency=1 * 10 ** (9),
+    )
+    sim = nickel_sim._create_simulation(jitter_electrons=False)
+    print(sim.hamiltonian)
+
+
+def plot_material_with_and_without_diagonal():
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=10,
+        number_of_electrons=5,
+        target_frequency=1 * 10 ** (9),
+    )
+    nickel_sim.simulate_average_material(
+        times=np.linspace(0, 5e-04, 1000).tolist(),
+        average_over=100,
+        jitter_electrons=True,
+        initial_occupancy=1,
+    )
+
+    nickel_sim.remove_diagonal_block_factors_for_simulation()
+    nickel_sim.simulate_average_material(
+        times=np.linspace(0, 5e-04, 1000).tolist(),
+        average_over=100,
+        jitter_electrons=True,
+        initial_occupancy=1,
+    )
+
+
+if __name__ == "__main__":
+    # print_hamiltonian()
+    # plot_simulation_energy_levels()
+    # plot_rough_simulation_with_hydrogen_energies()
+    # plot_rough_simulation_with_hydrogen_energies()
+    # plot_material_with_and_without_diagonal()
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=97,
+        number_of_electrons=1,
         target_frequency=1 * 10 ** (9),
     )
 
@@ -117,10 +176,10 @@ if __name__ == "__main__":
     # nickel_sim.simulate_average_material(
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
-
+    nickel_sim.remove_diagonal_block_factors_for_simulation()
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 0.5e-04, 1000).tolist(),
-        average_over=5000,
+        times=np.linspace(0, 20e-04, 1000).tolist(),
+        average_over=100,
         jitter_electrons=True,
         initial_occupancy=1,
     )

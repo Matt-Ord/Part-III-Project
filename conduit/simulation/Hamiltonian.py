@@ -34,11 +34,11 @@ class Hamiltonian:
             self._matrix_representation
         )
 
-    def _get_number_of_states(self):
+    def get_number_of_states(self):
         return self._matrix_representation.shape[0]
 
     def _is_valid_state_vector(self, vector):
-        return vector.shape == (self._get_number_of_states(),)
+        return vector.shape == (self.get_number_of_states(),)
 
     @staticmethod
     def _is_valid_matrix_shape(matrix_representation):
@@ -96,7 +96,7 @@ class Hamiltonian:
         if not self._is_valid_state_vector(vector):
             raise Exception(
                 f"state vector shape is wrong: actual {vector.shape}, \
-                expected({self._get_number_of_states()},)"
+                expected({self.get_number_of_states()},)"
             )
         return np.linalg.solve(self.eigenvectors, vector)
         return np.linalg.inv(self.eigenvectors.T).dot(vector)
@@ -167,12 +167,3 @@ class HamiltonianUtil:
             [block_value * base_matrix for block_value in r] for r in block_factors
         ]
         return _cls(np.block(matrix_parts))
-
-    @staticmethod
-    def characterise_overlap(hamiltonian: Hamiltonian, state_1, state_2):
-        state_1_decomposition = hamiltonian.get_eigen_decomposition_of_vector(state_1)
-        state_2_decomposition = hamiltonian.get_eigen_decomposition_of_vector(state_2)
-        product = np.multiply(state_1_decomposition, np.conj(state_2_decomposition))
-        # return np.sum(product)
-        abs_product = np.abs(product)
-        return np.sum(abs_product)

@@ -81,6 +81,10 @@ decay_rates_150K_fixed = {
         "measured": 2 * 3 * 310831069.0,
         "adjusted": 2 * 3 * 364875153,
     },
+    "half-filled quadratic data": {
+        "measured": 2 * 3 * 145557233,
+        "adjusted": 2 * 3 * 170865216,
+    },
 }
 if __name__ == "__main__":
     FinalResultsPlotter(

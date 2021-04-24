@@ -52,6 +52,27 @@ class ElectronSystem:
     def get_number_of_electrons(self):
         return self.electron_basis_states.shape[1]
 
+    @staticmethod
+    def _overlap_of_state(state_1, state_2):
+        product = np.multiply(state_1, np.conj(state_2))
+        overlap_amplitude = np.sum(product)
+        overlap = np.abs(overlap_amplitude) ** 2
+        return overlap
+
+    def get_occupation_fraction_of_eigenstates(self, hamiltonian: Hamiltonian):
+
+        initial_states = np.identity(self.get_number_of_electron_states() * 2)[
+            0 : self.get_number_of_electron_states()
+        ]
+
+        overlaps = [
+            np.sum(
+                [self._overlap_of_state(eigenstate, state) for state in initial_states]
+            )
+            for eigenstate in hamiltonian.eigenvectors.T
+        ]
+        return overlaps
+
     def __str__(self) -> str:
         return (
             f"state vector:\n{self.system_vector}\n"

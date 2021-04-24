@@ -1,17 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import List
-import numpy as np
-from simulation.ElectronSimulation import (
-    ElectronSimulation,
-    ElectronSimulationConfig,
-)
-import scipy.constants
+from typing import List, Union
 
-from properties.MaterialProperties import (
-    MaterialProperties,
-)
-from simulation.ElectronSimulationPlotter import ElectronSimulationPlotter
+import matplotlib.cm as cm
+import matplotlib.colors
+import matplotlib.colorbar
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import numpy as np
+import scipy.constants
+from properties.MaterialProperties import MaterialProperties
+from simulation.ElectronSimulation import ElectronSimulation, ElectronSimulationConfig
+from simulation.ElectronSimulationPlotter import ElectronSimulationPlotter
 
 
 class MaterialSimulator(ABC):
@@ -50,9 +49,30 @@ class MaterialSimulator(ABC):
     def hydrogen_overlaps(self):
         return self.material_properties.hydrogen_overlaps
 
+    _block_factors_for_simulation: Union[None, List[List[complex]]] = None
+
     @property
-    def block_factors_for_simulation(self):
-        return self.hydrogen_overlaps
+    def block_factors_for_simulation(self) -> list[list[complex]]:
+        if self._block_factors_for_simulation is None:
+            return self.hydrogen_overlaps
+        return self._block_factors_for_simulation
+
+    def reset_block_factors_for_simulation(self):
+        self._block_factors_for_simulation = None
+
+    def remove_diagonal_block_factors_for_simulation(self):
+        M = self.hydrogen_overlaps
+        self._block_factors_for_simulation = [
+            [0, M[0][1]],
+            [M[1][0], 0],
+        ]
+
+    def remove_off_diagonal_block_factors_for_simulation(self):
+        M = self.hydrogen_overlaps
+        self._block_factors_for_simulation = [[M[0][0], 0], [0, M[1][1]]]
+
+    def remove_all_block_factors_for_simulation(self):
+        self._block_factors_for_simulation = [[0, 0], [0, 0]]
 
     @abstractmethod
     def _generate_electron_energies(self, *args, **kwargs) -> List[float]:
@@ -137,6 +157,74 @@ class MaterialSimulator(ABC):
             sim,
             times,
             thermal=True,
+        )
+
+    @staticmethod
+    def _plot_energies_and_overlaps(
+        energies, overlaps, title="Plot of eigenstate energy levels"
+    ):
+        gs = gridspec.GridSpec(1, 6)
+        plt.figure()
+        ax1 = plt.subplot(gs[0, :-1])
+        ax2 = plt.subplot(gs[0, -1])
+        cmap = cm.get_cmap("viridis")
+
+        for (energy, overlap) in zip(energies.tolist(), overlaps):
+            ax1.axvline(energy, color=cmap(overlap))
+        ax1.set_title(title)
+        ax1.set_xlabel("Energy /J")
+
+        cb1 = matplotlib.colorbar.ColorbarBase(
+            ax2, cmap=cmap, orientation="vertical"
+        )  # type: ignore
+        ax2.set_ylabel("Proportion of state in initial")
+        plt.show()
+
+        fig, ax = plt.subplots(1)
+        ax.plot(energies, overlaps, "+")
+        ax.set_title(title)
+        ax.set_xlabel("Energy /J")
+        ax.set_ylabel("overlap")
+        plt.show()
+
+    def plot_material_energy_states(self):
+        self.remove_all_block_factors_for_simulation()
+        sim = self._create_simulation(jitter_electrons=False)
+        energies, overlaps = sim.get_energies_and_overlaps()
+        self._plot_energies_and_overlaps(
+            energies, overlaps, title="Plot of unperturbed eigenstate energy levels"
+        )
+
+        # with diagonal interaction
+        self.remove_off_diagonal_block_factors_for_simulation()
+        sim = self._create_simulation(
+            jitter_electrons=False,
+        )
+        energies, overlaps = sim.get_energies_and_overlaps()
+        self._plot_energies_and_overlaps(
+            energies,
+            overlaps,
+            title="Plot of eigenstate energy levels with diagonal correction",
+        )
+
+        # with off diagonal interaction
+        self.remove_diagonal_block_factors_for_simulation()
+        sim = self._create_simulation(
+            jitter_electrons=False,
+        )
+        energies, overlaps = sim.get_energies_and_overlaps()
+        self._plot_energies_and_overlaps(
+            energies,
+            overlaps,
+            title="Plot of eigenstate energy levels with off diagonal perturbation",
+        )
+
+        # with full interaction
+        self.reset_block_factors_for_simulation()
+        sim = self._create_simulation(jitter_electrons=False)
+        energies, overlaps = sim.get_energies_and_overlaps()
+        self._plot_energies_and_overlaps(
+            energies, overlaps, title="Plot of perturbed eigenstate energy levels"
         )
 
     def plot_average_material(

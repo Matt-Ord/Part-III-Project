@@ -144,7 +144,7 @@ class ElectronSimulation:
         # print("interaction_energy", interaction_hamiltonian[0, 0])
 
         hamiltonian = kinetic_hamiltonian + interaction_hamiltonian
-        hamiltonian.save_as_csv("hamiltonian.csv")
+
         return hamiltonian
 
     def _setup_explicit_initial_system(self, initial_electron_state_vector=None):
@@ -250,6 +250,12 @@ class ElectronSimulation:
             dummy_system
         ).characterise_tunnelling_overlaps(hamiltonian=self.hamiltonian)
         return overlaps
+
+    def get_energies_and_overlaps(self):
+        energies = self.hamiltonian.eigenvalues
+        dummy_system = self._setup_random_initial_system()
+        overlaps = dummy_system.get_occupation_fraction_of_eigenstates(self.hamiltonian)
+        return energies, overlaps
 
 
 if __name__ == "__main__":

@@ -76,11 +76,17 @@ data_150k = {
         "amplitude": 7914,
         "offset": 0,
     },
+    "half_filled_data": {
+        "amplitude": 3706,
+        "offset": 0,
+    },
 }
 
 if __name__ == "__main__":
     analyse_results(
-        OneBandQuadraticResultsAnalyserType1, data_150k["manual_data"], temperature=150
+        OneBandQuadraticResultsAnalyserType1,
+        data_150k["half_filled_data"],
+        temperature=150,
     )
     # calculate_adjusted_rate_against_temperature(
     #     OneBandCoshResultsAnalyserType9,

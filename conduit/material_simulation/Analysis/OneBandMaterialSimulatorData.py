@@ -134,22 +134,22 @@ times_150K = {
 }
 
 
-# rough_150K_corrected = {
-#     7: {2: 3e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04},
-#     8: {1: 3e-04, 2: 3e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 3e-04},
-#     9: {2: 5e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 5e-04},
-#     10: {2: 5e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 3e-04, 8: 5e-04},
-#     11: {1: 5e-04, 2: 5e-04, 3: 5e-04, 8: 5e-04, 9: 5e-04, 10: 5e-04},
-#     12: {2: 6e-04, 3: 5e-04, 9: 5e-04, 10: 6e-04},
-#     13: {1: 8e-04, 2: 8e-04, 3: 4e-04, 10: 4e-04, 11: 8e-04, 12: 8e-04},
-#     16: {1: 10e-04, 15: 10e-04},
-#     17: {1: 10e-04, 16: 10e-04},
-#     18: {1: 10e-04, 17: 10e-04},
-#     23: {1: 12e-04, 22: 12e-04},
-#     41: {1: 25e-04, 40: 25e-04},
-#     67: {1: 50e-04, 66: 50e-04},
-#     97: {1: 60e-04, 96: 60e-04},
-# }
+rough_150K_corrected = {
+    7: {2: 3e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04},
+    8: {1: 3e-04, 2: 3e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 3e-04},
+    9: {2: 5e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 5e-04},
+    10: {2: 5e-04, 3: 3e-04, 4: 3e-04, 5: 3e-04, 6: 3e-04, 7: 3e-04, 8: 5e-04},
+    11: {1: 5e-04, 2: 5e-04, 3: 5e-04, 8: 5e-04, 9: 5e-04, 10: 5e-04},
+    12: {2: 6e-04, 3: 5e-04, 9: 5e-04, 10: 6e-04},
+    13: {1: 8e-04, 2: 8e-04, 3: 4e-04, 10: 4e-04, 11: 8e-04, 12: 8e-04},
+    16: {1: 10e-04, 15: 10e-04},
+    17: {1: 10e-04, 16: 10e-04},
+    18: {1: 10e-04, 17: 10e-04},
+    23: {1: 12e-04, 22: 12e-04},
+    41: {1: 25e-04, 40: 25e-04},
+    67: {1: 50e-04, 66: 50e-04},
+    97: {1: 60e-04, 96: 60e-04},
+}
 rough_150K_corrected_5000_average = {
     2: {1: 0.15e-04},
     4: {2: 0.5e-4},
@@ -164,22 +164,8 @@ rough_150K_corrected_100_average = {
 rough_150K_corrected_50_average = {
     14: {7: 6e-04},
 }
-# Longer time, wt smaller w smaller
-omega_150k_corrected = {
-    # 7: {2: 0, 3: 0, 4: 0, 5: 0},
-    # 8: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
-    # 9: {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0},
-    # 10: {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0},
-    # 11: {1: 0, 2: 0, 3: 0, 8: 0, 9: 0, 10: 0},
-    # 12: {2: 0, 3: 0, 9: 0, 10: 0},
-    # 13: {1: 0, 2: 0, 3: 0, 10: 0, 11: 0, 12: 0},
-    # 16: {1: 0, 15: 0},
-    # 17: {1: 0, 16: 0},
-    # 18: {1: 0, 17: 0},
-    # 23: {1: 0, 22: 0},
-    # 41: {1: 0, 40: 0},
-    # 67: {1: 0, 66: 0},
-    # 97: {1: 0, 96: 0},
+rough_150K_corrected_50_average = {
+    16: {8: 8e-04},
 }
 times_150k_corrected = {
     7: {2: 1.25e-04, 3: 1.1e-04, 4: 1.1e-04, 5: 1.25e-04},
@@ -212,6 +198,42 @@ times_150k_corrected = {
     41: {1: 9.5e-04, 40: 15e-04},
     67: {1: 15e-04, 66: 26e-04},
     97: {1: 24e-04, 96: 35e-04},
+}
+
+rough_150K_no_diagonal = {
+    7: {1: 1.25e-4, 2: 1.5e-04, 3: 1e-04, 4: 1e-04, 5: 1.5e-04, 6: 1.25e-4},
+    8: {1: 1.5e-04, 2: 1.25e-04, 3: 1e-04, 4: 1e-04, 5: 1e-4, 6: 1.25e-04, 7: 1.5e-04},
+    9: {
+        1: 1.25e-4,
+        2: 1.25e-04,
+        3: 1e-04,
+        4: 1e-04,
+        5: 1e-04,
+        6: 1e-04,
+        7: 1.25e-04,
+        8: 1.25e-04,
+    },
+    10: {
+        1: 1.5e-4,
+        2: 1.25e-04,
+        3: 1e-04,
+        4: 1e-04,
+        5: 0.8e-04,
+        6: 1e-04,
+        7: 1e-04,
+        8: 1.25e-04,
+        9: 1.5e-04,
+    },
+    11: {1: 1.5e-04, 2: 1e-04, 3: 1e-04, 8: 1e-04, 9: 1e-04, 10: 1.5e-04},
+    12: {1: 1.25e-04, 2: 1e-04, 3: 1e-04, 9: 1e-04, 10: 1e-04, 11: 1.25e-04},
+    13: {1: 1e-04, 2: 1e-04, 3: 1e-04, 10: 1e-04, 11: 1e-04, 12: 1e-04},
+    16: {1: 5e-04, 15: 5e-04},
+    17: {1: 5e-04, 16: 5e-04},
+    18: {1: 5e-04, 17: 5e-04},
+    23: {1: 5e-04, 22: 5e-04},
+    41: {1: 10e-04, 40: 10e-04},
+    67: {1: 10e-04, 66: 10e-04},
+    97: {1: 20e-04, 96: 20e-04},
 }
 
 
@@ -686,6 +708,14 @@ class OneBandDecayTimeData:
 
         return dict(flipped)
 
+    def get_flattened_data(self):
+        flattened = defaultdict(dict)
+        for key, val in self._data.items():
+            for subkey, subval in val.items():
+                flattened[(key, subkey)] = subval
+
+        return dict(flattened)
+
     def plot_rate_for_each_elecron(self, ignore_single, ax):
         all_occupations = []
         all_decay_rates = []
@@ -1074,6 +1104,86 @@ class OneBandDecayTimeData:
         fig.tight_layout()
         plt.show()
 
+    @staticmethod
+    def _exponential_curve(y, offset, amplitude):
+        return offset + (amplitude / y) ** 2
+
+    @classmethod
+    def _fit_time_curve(cls, x, y) -> Any:
+        return scipy.optimize.curve_fit(
+            f=cls._exponential_curve,
+            xdata=x,
+            ydata=y,
+            bounds=[[0, 0], [np.inf, np.inf]],
+            sigma=y,
+            p0=[np.min(y), 1],
+        )
+
+    @staticmethod
+    def _log_curve(y, offset, amplitude):
+        return offset + (amplitude / y) ** 2
+
+    @classmethod
+    def _fit_log_time_curve(cls, x, y) -> Any:
+        return scipy.optimize.curve_fit(
+            f=cls._log_curve,
+            xdata=x,
+            ydata=y,
+            bounds=[[0, 0], [np.inf, np.inf]],
+        )
+
+    def plot_decay_rate_against_number_of_electrons(self):
+        flat_data = self.get_flattened_data()
+        number_of_electrons = [k[1] for k in flat_data.keys()]
+        decay_rates = [1 / np.average([d[0] for d in v]) for v in flat_data.values()]
+        decay_errors = [
+            np.average([d[0] for d in v]) ** (-2) * np.var([d[0] for d in v]) ** (0.5)
+            for v in flat_data.values()
+        ]
+        # plot_decay_rates.append(
+        #                 1 /
+        #             )
+        #             plot_decay_rate_errors.append(
+        #                 np.average([d[0] for d in data_for_number_of_states]) ** (-2)
+        #                 * np.var([d[0] for d in data_for_number_of_states]) ** (0.5)
+        #             )
+        print(np.min(decay_rates))
+        a, b = self._fit_time_curve(x=number_of_electrons, y=decay_rates)
+        print(a)
+
+        n_electrons_for_fit = np.linspace(2, 8, 1000)
+        fig, ax = plt.subplots(1)
+        ax.errorbar(
+            number_of_electrons,
+            np.array(decay_rates),
+            label="data",
+            yerr=decay_errors,
+            fmt="+",
+        )
+        ax.plot(
+            n_electrons_for_fit,
+            self._exponential_curve(n_electrons_for_fit, *a),
+            label="fit",
+        )
+        ax.legend()
+        plt.show()
+        fig, ax = plt.subplots(1)
+        log_errors = [dy / y for (y, dy) in zip(decay_rates, decay_errors)]
+        ax.errorbar(
+            np.log(number_of_electrons),
+            np.log(np.array(decay_rates) - a[0]),
+            label="data",
+            yerr=log_errors,
+            fmt="+",
+        )
+        ax.plot(
+            np.log(n_electrons_for_fit),
+            np.log(self._exponential_curve(n_electrons_for_fit, 0, a[1])),
+            label="fit",
+        )
+        ax.legend()
+        plt.show()
+
 
 class OneBandMaterialSimualtorDataUtil:
     @classmethod
@@ -1185,19 +1295,52 @@ class OneBandMaterialSimualtorDataUtil:
     @staticmethod
     def plot_decay_times_fitted_ex_squared_corrected(load_from):
         data = OneBandMaterialSimualtorData.load_from_file(load_from)
-        data = data.filter_data(
-            filter=lambda n_states, n_electrons: True  # n_states == 8 and n_electrons == 5
-        )
         plot_each = False
-        decay_data = data.generate_decay_time_data_fit_ex_squared_wavepacket(
-            plot_each=plot_each, fixed_amplitude=False
+        data1 = data.filter_data(
+            filter=lambda n_states, n_electrons: n_states
+            > 5  # True  # n_states == 8 and n_electrons == 5
         )
-        decay_data.plot_decay_rates_against_occupation(
-            display=["linear", "quadratic2"], for_each="electron"
+        # decay_data = data1.generate_decay_time_data_fit_ex_squared_wavepacket(
+        #     plot_each=plot_each, fixed_amplitude=False
+        # )
+        # decay_data.plot_decay_rates_against_occupation(
+        #     display=["linear", "quadratic2"], for_each="electron"
+        # )
+
+        half_filled_data = data.filter_data(
+            lambda n_states, n_electrons: n_states / n_electrons == 2 and n_states != 2
         )
-        decay_data.plot_log_decay_rates_against_occupation(
-            display=["linear", "quadratic2"]
+        half_filled_decay_data = (
+            half_filled_data.generate_decay_time_data_fit_ex_squared_wavepacket(
+                plot_each=plot_each, fixed_amplitude=False
+            )
         )
+        half_filled_decay_data.plot_decay_rate_against_number_of_electrons()
+
+    @staticmethod
+    def plot_decay_times_fitted_ex_squared_no_diagonal(load_from):
+        data = OneBandMaterialSimualtorData.load_from_file(load_from)
+        plot_each = False
+        data1 = data.filter_data(
+            filter=lambda n_states, n_electrons: n_states
+            > 5  # True  # n_states == 8 and n_electrons == 5
+        )
+        # decay_data = data1.generate_decay_time_data_fit_ex_squared_wavepacket(
+        #     plot_each=plot_each, fixed_amplitude=False
+        # )
+        # decay_data.plot_decay_rates_against_occupation(
+        #     display=["linear", "quadratic2"], for_each="electron"
+        # )
+
+        half_filled_data = data.filter_data(
+            lambda n_states, n_electrons: n_states / n_electrons == 2 and n_states != 2
+        )
+        half_filled_decay_data = (
+            half_filled_data.generate_decay_time_data_fit_ex_squared_wavepacket(
+                plot_each=plot_each, fixed_amplitude=False
+            )
+        )
+        half_filled_decay_data.plot_decay_rate_against_number_of_electrons()
 
     @staticmethod
     def plot_decay_times_fitted_ex(load_from):
@@ -1467,16 +1610,16 @@ class OneBandMaterialSimualtorDataUtil:
 
 
 def simulate_times():
-    for n_states, stop_times in rough_150K_corrected_50_average.items():
+    for n_states, stop_times in rough_150K_no_diagonal.items():
         print(n_states)
         n_points = {n_electrons: 2000 for n_electrons in stop_times.keys()}
         OneBandMaterialSimualtorDataUtil.simulate_all_tunnelling_times(
             number_of_states=n_states,
             stop_times=stop_times,
             number_of_points=n_points,
-            average_over=50,
+            average_over=1000,
             number_of_repeats=4,
-            save_to="conduit data/150K data with exchange2.pkl",
+            save_to="conduit data/150K data no diagonal.pkl",
         )
 
 
@@ -1487,6 +1630,9 @@ if __name__ == "__main__":
     # OneBandMaterialSimualtorDataUtil.plot_decay_times_fitted_ex(
     #     "conduit data/150K data.pkl"
     # )
+    OneBandMaterialSimualtorDataUtil.plot_decay_times_fitted_ex_squared_no_diagonal(
+        "conduit data/150K data no diagonal.pkl"
+    )
     OneBandMaterialSimualtorDataUtil.plot_decay_times_fitted_ex_squared_corrected(
         "conduit data/150K data with exchange2.pkl"
     )
