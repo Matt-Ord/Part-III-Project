@@ -1,7 +1,7 @@
-from LindbladSolver import LindbladSolver
+from LindbladSolver import TwoSiteLindbladSolver
 
 
-class RotatingWaveLindbladSolver(LindbladSolver):
+class RotatingWaveLindbladSolver(TwoSiteLindbladSolver):
     def _calculate_derivatie_of_p00(self, t, p00, p01, p10, p11):
         p00_term = -p00 * 2 * self._get_gamma_abcd_omega_ij(1, 0, 1, 0, 1, 0)
         p01_term = 0

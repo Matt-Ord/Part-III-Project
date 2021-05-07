@@ -1,17 +1,18 @@
 from typing import Type
-from FullLindbladSolver import FullLindbladSolver
+from FullLindbladSolver import FullLindbladSolver, FullLindbladWithSinkSolver
 import numpy as np
 import matplotlib.pyplot as plt
-from LindbladSolver import LindbladSolver
+from LindbladSolver import LindbladSolver, TwoSiteLindbladSolver
 from NoEnergyGapLindbladSolver import NoEnergyGapLindbladSolver
 from RotatingWaveLindbladSolver import RotatingWaveLindbladSolver
 import scipy.constants
+import experemental_data
 
 from properties.MaterialProperties import NICKEL_MATERIAL_PROPERTIES
 
 
 class LindbladSolverPlotter:
-    def __init__(self, solver: LindbladSolver) -> None:
+    def __init__(self, solver: TwoSiteLindbladSolver) -> None:
         self.solver = solver
 
     @staticmethod
@@ -52,6 +53,19 @@ class LindbladSolverPlotter:
         ax.legend()
         return fig, ax
 
+    def plot_initial_state_density_against_time(self, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots()
+        else:
+            fig = ax.get_figure()
+        self._plot_probabilities_against_time(
+            self.solver.times, self.solver.p00_values, label="P00", ax=ax
+        )
+        ax.set_xlim([self.solver.times[0], None])
+        ax.set_title("Plot of the initial state density against time")
+        ax.legend()
+        return fig, ax
+
     def plot_cross_terms_against_time(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
@@ -85,7 +99,7 @@ class LindbladSolverPlotter:
         return self
 
     @classmethod
-    def from_file(cls, solver_type: Type[LindbladSolver], file):
+    def from_file(cls, solver_type: Type[TwoSiteLindbladSolver], file):
         return cls(solver_type.load_from_file(file))
 
 
@@ -145,17 +159,17 @@ def calculate_gamma_prefactor(temperature):
         scipy.constants.elementary_charge ** 2
     )
     c = (scipy.constants.epsilon_0 ** 2) / (scipy.constants.electron_mass ** 2)
-    d = 32 * np.sqrt(np.pi)
+    d = 64 * np.sqrt(np.pi)
     return a * b * c * d
 
 
-def calculate_lindblad_rate(temperature):
+def calculate_combined_lindblad_rate(temperature):
     delta_e = (
         NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[0]
         - NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[1]
     )
     return (
-        4
+        2
         * NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[0][1]
         * NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[1][0]
         * calculate_gamma_prefactor(temperature)
@@ -163,11 +177,64 @@ def calculate_lindblad_rate(temperature):
     )
 
 
+def calculate_slow_direction_lindblad_rate(temperature):
+    delta_e = (
+        NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[0]
+        - NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[1]
+    )
+    return (
+        NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[0][1]
+        * NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[1][0]
+        * calculate_gamma_prefactor(temperature)
+        * np.exp(delta_e / (2 * scipy.constants.Boltzmann * temperature))
+    )
+
+
+def calculate_fast_direction_lindblad_rate(temperature):
+    delta_e = (
+        NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[0]
+        - NICKEL_MATERIAL_PROPERTIES.hydrogen_energies[1]
+    )
+    return (
+        NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[0][1]
+        * NICKEL_MATERIAL_PROPERTIES.hydrogen_overlaps[1][0]
+        * calculate_gamma_prefactor(temperature)
+        * np.exp(-delta_e / (2 * scipy.constants.Boltzmann * temperature))
+    )
+
+
 def plot_rate_against_temperature():
-    temperatures = np.linspace(100, 200, 1000)
+    temperatures = np.linspace(100, 255, 1000)
     fig, ax = plt.subplots()
-    ax.plot(1 / temperatures, calculate_lindblad_rate(temperatures))
-    print(calculate_lindblad_rate(150))
+    ax.plot(
+        1 / temperatures,
+        np.log10(3 * calculate_combined_lindblad_rate(temperatures)),
+        label="lindblad",
+    )
+    ax.plot(
+        1 / temperatures,
+        np.log10(3 * calculate_slow_direction_lindblad_rate(temperatures)),
+        label="slow direction",
+    )
+    ax.plot(
+        1 / temperatures,
+        np.log10(3 * calculate_fast_direction_lindblad_rate(temperatures)),
+        label="fast direction",
+    )
+    ax.errorbar(
+        1 / experemental_data.temperature,
+        np.log10(experemental_data.jumprate),
+        yerr=[
+            np.log10(experemental_data.absuppererrorvalue / experemental_data.jumprate),
+            np.log10(experemental_data.jumprate / experemental_data.abslowererrorvalue),
+        ],
+        label="experemental data",
+    )
+    ax.set_title("Plot of Experemental and Theoretical Tunnelling Rate")
+    ax.set_ylabel("log(jumprate)")
+    ax.set_xlabel("1/Temperature")
+    print(3 * calculate_combined_lindblad_rate(150))
+    ax.legend()
     plt.show()
 
 
@@ -247,6 +314,68 @@ def plot_full_lindblad():
     plt.show()
 
 
+def plot_full_lindblad_with_sink():
+    solver = FullLindbladWithSinkSolver(
+        times=np.linspace(0, 1 * 10 ** (-12), 2000),
+        temperature=150,
+        initial_state=[1, 0, 0, 0],
+    )
+    gamma1 = 2 * solver._get_gamma_abcd_omega_ij(1, 0, 1, 0, 1, 0)
+    gamma2 = 2 * solver._get_gamma_abcd_omega_ij(0, 1, 0, 1, 0, 1)
+
+    decay_rate = gamma1 + gamma2
+    print(decay_rate)
+
+    fig, ax = LindbladSolverPlotter(solver).plot_initial_state_density_against_time()
+    ax.set_xlabel("Time / s")
+    ax.set_ylabel("Final State Probablity")
+    ax.set_title(
+        "Plot of full linblad solution, displaying oscillations\n"
+        + r"with a characteristic time of $2.2x10^{-13}$"
+    )
+    ax.plot(
+        solver.times,
+        rotating_wave_solution1(solver.times, gamma1, gamma2),
+        alpha=0.3,
+        color="red",
+        label="rotating wave",
+    )
+    ax.plot(
+        solver.times,
+        rotating_wave_solution1(solver.times, gamma1, 0),
+        alpha=0.3,
+        color="green",
+        label="rotating wave with sink",
+    )
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+
+    solver = FullLindbladWithSinkSolver(
+        times=np.linspace(0, 1 * 10 ** (-8), 2000),
+        temperature=150,
+        initial_state=[1, 0, 0, 0],
+    )
+    solver._max_step = 10 ** (-14)
+    fig, ax = LindbladSolverPlotter(solver).plot_diagonal_terms_against_time()
+    ax.set_xlabel("Time / s")
+    ax.set_ylabel("Probablity")
+    ax.set_title(
+        "Plot of the diagonal elements of the matrix against time \n"
+        + r"alongside the rotating wave decay"
+    )
+    ax.plot(
+        solver.times,
+        rotating_wave_solution1(solver.times, gamma1, 0),
+        color="green",
+        linestyle="dashed",
+        label="rotating wave with sink",
+    )
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+
+
 def plot_no_gap_lindblad():
     solver = NoEnergyGapLindbladSolver(
         times=np.linspace(0, 2 * 10 ** (-5), 20000),
@@ -260,7 +389,12 @@ def plot_no_gap_lindblad():
     ).print_final_density().plot_solution()
 
 
+def plot_many_state_lindblad():
+    pass
+
+
 if __name__ == "__main__":
+    plot_full_lindblad_with_sink()
     # plot_full_lindblad()
     # plot_rotating_wave_lindblad()
     plot_rate_against_temperature()

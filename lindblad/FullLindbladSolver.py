@@ -1,8 +1,8 @@
-from LindbladSolver import LindbladSolver
+from LindbladSolver import TwoSiteLindbladSolver
 import numpy as np
 
 
-class FullLindbladSolver(LindbladSolver):
+class FullLindbladSolver(TwoSiteLindbladSolver):
 
     _max_step = np.inf
 
@@ -23,8 +23,8 @@ class FullLindbladSolver(LindbladSolver):
             - self._get_phase_factor(t, i, j, i, n)
             * self._get_gamma_abcd_omega_ij(i, j, i, n, i, j)
             * probabilities[m][j]
-            for i in [0, 1]
-            for j in [1, 0]
+            for i in [False, True]
+            for j in [True, False]
         )
 
     def _calculate_derivatie_of_p00(self, t, p00, p01, p10, p11):
@@ -42,3 +42,8 @@ class FullLindbladSolver(LindbladSolver):
     def _calculate_derivatie_of_p11(self, t, p00, p01, p10, p11):
         probabilities = [[p00, p01], [p10, p11]]
         return self._calculate_derivatie_of_pmn(t, probabilities, 1, 1)
+
+
+class FullLindbladWithSinkSolver(FullLindbladSolver):
+    def _calculate_derivatie_of_p11(self, t, p00, p01, p10, p11):
+        return 0

@@ -1,9 +1,12 @@
+import numpy as np
+import scipy.constants
+from matplotlib.pyplot import title
+from properties.MaterialProperties import NICKEL_MATERIAL_PROPERTIES, MaterialProperties
+
 from material_simulation.MultiBandMaterialSimulator import (
     MultiBandMaterialSimulator,
     MultiBandNickelMaterialSimulatorUtil,
 )
-from properties.MaterialProperties import MaterialProperties, NICKEL_MATERIAL_PROPERTIES
-import numpy as np
 
 # Simulates the electron sysytem using a single
 # Closely packed band, and uses the theroetical
@@ -11,7 +14,7 @@ import numpy as np
 # an approximate tunnelling rate
 
 
-class OneBandMaterialSimulator(MultiBandMaterialSimulator):
+class OneBandTwoSpinMaterialSimulator(MultiBandMaterialSimulator):
     def __init__(
         self,
         material_properties: MaterialProperties,
@@ -28,34 +31,28 @@ class OneBandMaterialSimulator(MultiBandMaterialSimulator):
             bandwidth,
         )
 
-    hydrogen_energies_for_simulation = [0, 0]
-
     @property
     def number_of_bands(self):
-        return 1
+        return 2
+
+    hydrogen_energies_for_simulation = [0, 0]
 
     def _generate_electron_energies(self) -> np.ndarray:
-        return self._get_band_energies()
+        return np.tile(self._get_band_energies(), 2)
 
 
 if __name__ == "__main__":
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
-        OneBandMaterialSimulator,
+        OneBandTwoSpinMaterialSimulator,
         temperature=150,
-        number_of_states_per_band=13,
-        number_of_electrons=5,
+        number_of_states_per_band=5,
+        number_of_electrons=4,
         target_frequency=1 * 10 ** (9),
     )
 
-    # nickel_sim.simulate_material(times=np.linspace(0, 0.001 * 10 ** -12, 1000))
-
-    # nickel_sim.simulate_average_material(
-    #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
-    # )
-    nickel_sim.remove_diagonal_block_factors_for_simulation()
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 2e-04, 1000).tolist(),
-        average_over=10,
+        times=np.linspace(0, 1000e-04, 1000).tolist(),
+        average_over=50,
         jitter_electrons=True,
         initial_occupancy=1,
     )

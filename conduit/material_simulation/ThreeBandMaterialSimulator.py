@@ -18,6 +18,10 @@ from material_simulation.MultiBandMaterialSimulator import (
 
 
 class ThreeBandMaterialSimulator(MultiBandMaterialSimulator):
+    @property
+    def number_of_bands(self):
+        return 3
+
     def _generate_electron_energies(self):
         hydrogen_energies = self.material_properties.hydrogen_energies
 
@@ -45,6 +49,7 @@ if __name__ == "__main__":
         temperature=10000,
         number_of_states_per_band=3,
         target_frequency=1 * 10 ** (9),
+        number_of_electrons=3,
     )
 
     # nickel_sim.simulate_material(
@@ -53,5 +58,7 @@ if __name__ == "__main__":
     # )
 
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 4 * 10 ** -5, 1000), average_over=20, jitter_electrons=True
+        times=np.linspace(0, 4 * 10 ** -5, 1000).tolist(),
+        average_over=20,
+        jitter_electrons=True,
     )

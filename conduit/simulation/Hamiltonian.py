@@ -114,6 +114,9 @@ class Hamiltonian:
     def __mul__(self, other: complex) -> Hamiltonian:
         return type(self)(self._matrix_representation.copy() * other)
 
+    def as_matrix(self):
+        return self._matrix_representation.copy()
+
     __rmul__ = __mul__
 
     def __getitem__(self, key):

@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import abstractmethod, abstractproperty
 from typing import Any, Generic, Type, TypeVar
 import numpy as np
 import scipy.constants
@@ -27,9 +27,8 @@ class MultiBandMaterialSimulator(MaterialSimulator):
         bandwidth: float,
     ) -> None:
         self.number_of_states_per_band = number_of_states_per_band
-        self.number_of_electrons = number_of_electrons
         self.bandwidth = bandwidth
-        super().__init__(material_properties, temperature)
+        super().__init__(material_properties, temperature, number_of_electrons)
 
     # @property
     # def hydrogen_energies(self):
@@ -37,6 +36,19 @@ class MultiBandMaterialSimulator(MaterialSimulator):
     @abstractmethod
     def _generate_electron_energies(self):
         pass
+
+    @abstractproperty
+    def number_of_bands(self):
+        pass
+
+    def _electron_jitter_function(self):
+        random_shift = np.random.normal(
+            loc=0.0,
+            scale=self._get_energy_jitter(),
+            size=self.number_of_states_per_band,
+        )
+        shift = np.tile(random_shift, self.number_of_bands)
+        return lambda x: x + shift
 
     def _get_band_energies(self):
         return np.linspace(

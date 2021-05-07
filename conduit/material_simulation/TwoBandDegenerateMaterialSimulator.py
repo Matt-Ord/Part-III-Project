@@ -43,6 +43,10 @@ class TwoBandDegenerateMaterialSimulator(MultiBandMaterialSimulator):
         return [0, 0]
 
     @property
+    def number_of_bands(self):
+        return 2
+
+    @property
     def energy_difference_in_joules(self):
         return self.energy_difference * self.boltzmann_energy
 
@@ -67,7 +71,7 @@ if __name__ == "__main__":
     )
 
     nickel_sim.simulate_average_material(
-        times=np.linspace(0, 2 * 10 ** -5, 1000),
+        times=np.linspace(0, 2 * 10 ** -5, 1000).tolist(),
         average_over=10,
         jitter_electrons=True,
         period_of_noise_fluctuation=1 * 10 ** (-6),

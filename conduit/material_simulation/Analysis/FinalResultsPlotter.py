@@ -77,13 +77,17 @@ decay_rates_120K = {
     },
 }
 decay_rates_150K_fixed = {
-    "manual quadratic data": {
+    "manual data": {
         "measured": 2 * 3 * 310831069.0,
         "adjusted": 2 * 3 * 364875153,
     },
-    "half-filled quadratic data": {
+    "half-filled data": {
         "measured": 2 * 3 * 145557233,
         "adjusted": 2 * 3 * 170865216,
+    },
+    "auto no-diagonal data": {
+        "measured": 2 * 3 * 540242779,
+        "adjusted": 2 * 3 * 634174594,
     },
 }
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List, final
 import numpy as np
 import scipy.constants
 from simulation.Hamiltonian import Hamiltonian, HamiltonianUtil
@@ -34,8 +34,10 @@ class ElectronSystem:
 
         return type(self)(evolved_system_vector, self.electron_basis_states)
 
-    def get_electron_density_for_each_hydrogen(self):
-        return self.get_probability_for_each_hydrogen().dot(self.electron_basis_states)
+    def get_electron_density_for_each_hydrogen(self) -> np.ndarray:
+        return self.get_probability_for_each_hydrogen().dot(
+            self.electron_basis_states
+        )  # type:ignore
 
     def get_probability_for_each_hydrogen(self):
         return np.array(self._get_state_probabilities()).reshape(2, -1)
@@ -59,16 +61,33 @@ class ElectronSystem:
         overlap = np.abs(overlap_amplitude) ** 2
         return overlap
 
-    def get_occupation_fraction_of_eigenstates(self, hamiltonian: Hamiltonian):
+    def get_summed_overlap_fraction_of_eigenstates(
+        self, hamiltonian: Hamiltonian
+    ) -> List[float]:
+
+        summed_overlaps = [
+            np.sum([state[0] for state in eigenstate])
+            for eigenstate in self.get_overlap_fraction_of_eigenstates(hamiltonian)
+        ]
+        return summed_overlaps  # type: ignore
+
+    def get_overlap_fraction_of_eigenstates(self, hamiltonian: Hamiltonian):
 
         initial_states = np.identity(self.get_number_of_electron_states() * 2)[
             0 : self.get_number_of_electron_states()
         ]
+        final_states = np.identity(self.get_number_of_electron_states() * 2)[
+            self.get_number_of_electron_states() :
+        ]
 
         overlaps = [
-            np.sum(
-                [self._overlap_of_state(eigenstate, state) for state in initial_states]
-            )
+            [
+                (
+                    self._overlap_of_state(eigenstate, initial_state),
+                    self._overlap_of_state(eigenstate, final_state),
+                )
+                for (initial_state, final_state) in zip(initial_states, final_states)
+            ]
             for eigenstate in hamiltonian.eigenvectors.T
         ]
         return overlaps
@@ -335,30 +354,6 @@ class ElectronSystemUtil:
             self.get_electron_basis_states(), electron_state, hydrogen_state
         )
         return state_vector
-
-    def characterise_tunnelling_overlaps(self, hamiltonian: Hamiltonian):
-        electron_basis_states = self.get_electron_basis_states()
-
-        elecron_states = electron_basis_states
-        possible_state_vectors = [
-            self._create_explicit_state_vector(
-                electron_basis_states, electron_state, hydrogen_state=1
-            )
-            for electron_state in elecron_states
-        ]
-
-        overlaps = [
-            [
-                HamiltonianUtil.characterise_overlap(
-                    hamiltonian,
-                    initial_state_vector,
-                    final_state_vector,
-                )
-                for final_state_vector in possible_state_vectors
-            ]
-            for initial_state_vector in possible_state_vectors
-        ]
-        return overlaps
 
     @classmethod
     def given(cls, system: ElectronSystem):

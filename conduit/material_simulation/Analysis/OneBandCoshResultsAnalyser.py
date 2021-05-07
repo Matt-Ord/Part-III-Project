@@ -267,7 +267,7 @@ def analyse_results(analyser_type: Type[OneBandCoshResultsAnalyser], data, tempe
         simulation_energy_bandwidth=MultiBandMaterialSimulatorUtil.calculate_bandwidth(
             target_frequency=1 * 10 ** (9)
         ),
-    )
+    )  # type: ignore
     # analyser.plot_adjusted_occupation_against_occupation()
     # analyser.plot_adjusted_log_rate_against_occupation()
     # analyser.plot_adjusted_rate_against_occupation()

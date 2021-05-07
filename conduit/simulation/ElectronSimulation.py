@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from typing import List, NamedTuple
+from typing import Callable, List, NamedTuple
 
 from simulation.Hamiltonian import Hamiltonian
 import numpy as np
 from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
+
+
+def randomise_electron_energies(energies: np.ndarray, scale):
+    return energies + np.random.normal(loc=0.0, scale=scale, size=energies.size)
 
 
 class ElectronSimulationConfig(NamedTuple):
@@ -14,7 +18,7 @@ class ElectronSimulationConfig(NamedTuple):
     hydrogen_energies: List[float]
     block_factors: List[List[complex]] = [[0, 0], [0, 0]]
     q_prefactor: float = 1
-    electron_energy_jitter: float = 0
+    electron_energy_jitter: Callable[[np.ndarray], np.ndarray] = lambda x: x
     number_of_electrons: int | None = None
     initial_occupancy: float = 1
 
@@ -28,6 +32,11 @@ class ElectronSimulation:
     @property
     def number_of_electron_states(self):
         return len(self.config.electron_energies)
+
+    @property
+    def number_of_electron_basis_states(self):
+        dummy_sim = self._setup_random_initial_system()
+        return dummy_sim.get_number_of_electron_states()
 
     @property
     def number_of_electrons(self):
@@ -120,14 +129,10 @@ class ElectronSimulation:
             )
         return evolved_systems
 
-    @staticmethod
-    def _randomise_energies(energies: np.ndarray, scale):
-        return energies + np.random.normal(loc=0.0, scale=scale, size=energies.size)
-
-    def _create_hamiltonian(self) -> Hamiltonian:
+    def _create_kinetic_hamiltonian(self) -> Hamiltonian:
         dummy_system = self._setup_random_initial_system()
-        electron_energies = self._randomise_energies(
-            np.array(self.electron_energies), self.electron_energy_jitter
+        electron_energies = self.electron_energy_jitter(
+            np.array(self.electron_energies)
         )
 
         kinetic_hamiltonian = ElectronSystemUtil.given(dummy_system).create_kinetic(
@@ -135,10 +140,20 @@ class ElectronSimulation:
             electron_energies,
             self.hydrogen_energies,
         )
+        return kinetic_hamiltonian
+
+    def _create_interaction_hamiltonian(self) -> Hamiltonian:
+        dummy_system = self._setup_random_initial_system()
 
         interaction_hamiltonian = ElectronSystemUtil.given(
             dummy_system
         ).create_constant_interaction(Hamiltonian, self.block_factors, self.q_prefactor)
+        return interaction_hamiltonian
+
+    def _create_hamiltonian(self) -> Hamiltonian:
+
+        kinetic_hamiltonian = self._create_kinetic_hamiltonian()
+        interaction_hamiltonian = self._create_interaction_hamiltonian()
 
         # print("kinetic_energy", kinetic_hamiltonian[0, 0])
         # print("interaction_energy", interaction_hamiltonian[0, 0])
@@ -244,18 +259,23 @@ class ElectronSimulation:
 
         return electron_densities_for_each
 
-    def characterise_tunnelling_overlaps(self):
+    def get_energies_and_summed_overlaps(self):
+        energies = self.hamiltonian.eigenvalues
         dummy_system = self._setup_random_initial_system()
-        overlaps = ElectronSystemUtil.given(
-            dummy_system
-        ).characterise_tunnelling_overlaps(hamiltonian=self.hamiltonian)
-        return overlaps
+        overlaps = dummy_system.get_summed_overlap_fraction_of_eigenstates(
+            self.hamiltonian
+        )
+        return energies, overlaps
 
     def get_energies_and_overlaps(self):
         energies = self.hamiltonian.eigenvalues
         dummy_system = self._setup_random_initial_system()
-        overlaps = dummy_system.get_occupation_fraction_of_eigenstates(self.hamiltonian)
+        overlaps = dummy_system.get_overlap_fraction_of_eigenstates(self.hamiltonian)
         return energies, overlaps
+
+    def get_energies_without_interaction(self):
+        kinetic_hamiltonian = self._create_kinetic_hamiltonian()
+        return np.diagonal(kinetic_hamiltonian.as_matrix())
 
 
 if __name__ == "__main__":

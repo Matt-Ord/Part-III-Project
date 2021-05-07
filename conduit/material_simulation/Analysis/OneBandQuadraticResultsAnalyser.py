@@ -80,14 +80,23 @@ data_150k = {
         "amplitude": 3706,
         "offset": 0,
     },
+    "auto_no_diagonal_data": {
+        "amplitude": 13755,
+        "offset": 0,
+    },
 }
 
 if __name__ == "__main__":
     analyse_results(
         OneBandQuadraticResultsAnalyserType1,
-        data_150k["half_filled_data"],
+        data_150k["auto_no_diagonal_data"],
         temperature=150,
     )
+    # analyse_results(
+    #     OneBandQuadraticResultsAnalyserType1,
+    #     data_150k["half_filled_data"],
+    #     temperature=150,
+    # )
     # calculate_adjusted_rate_against_temperature(
     #     OneBandCoshResultsAnalyserType9,
     #     data_150k["manual_data"],
