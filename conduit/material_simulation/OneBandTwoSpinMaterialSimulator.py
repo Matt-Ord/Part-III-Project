@@ -50,7 +50,7 @@ if __name__ == "__main__":
         target_frequency=1 * 10 ** (9),
     )
 
-    nickel_sim.simulate_average_material(
+    nickel_sim.plot_average_densities(
         times=np.linspace(0, 1000e-04, 1000).tolist(),
         average_over=50,
         jitter_electrons=True,

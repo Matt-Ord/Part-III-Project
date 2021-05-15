@@ -15,8 +15,7 @@ class CleverlySpacedMaterialSimulator(MaterialSimulator):
         number_of_electrons: int,
     ) -> None:
         self.number_of_bands = number_of_bands
-        self.number_of_electrons = number_of_electrons
-        super().__init__(material_properties, temperature)
+        super().__init__(material_properties, temperature, number_of_electrons)
 
     def _generate_electron_energies(self):
         return np.arange(self.number_of_bands) * self._get_energy_spacing()
@@ -68,12 +67,12 @@ if __name__ == "__main__":
         number_of_bands=10,
         number_of_electrons=5,
     )
-    nickel_sim.simulate_material(
-        times=np.linspace(0, 4 * 10 ** (-13), 1000),
+    nickel_sim.plot_electron_densities(
+        times=np.linspace(0, 4 * 10 ** (-13), 1000).tolist(),
     )
 
-    nickel_sim.simulate_average_material(
-        times=np.linspace(0, 2 * 10 ** (-12), 1000),
+    nickel_sim.plot_average_densities(
+        times=np.linspace(0, 2 * 10 ** (-12), 1000).tolist(),
         average_over=20,
         jitter_electrons=True,
     )

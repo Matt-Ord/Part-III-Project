@@ -138,7 +138,7 @@ class LindbladSolver(ABC):
         initial_state = data["initial_state"]
         solver = cls(times, temperature, initial_state)
         yvals = data["yvals"]
-        if not np.array_equal(yvals, None):
+        if not np.array_equal(yvals, None):  # type: ignore
             solver._soln = {"t": times, "y": yvals}
         return solver
 

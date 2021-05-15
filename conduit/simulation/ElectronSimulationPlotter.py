@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 from matplotlib import gridspec, colors, colorbar
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import numpy as np
 from numpy.random import beta
 import numpy.typing
@@ -231,7 +232,7 @@ class ElectronSimulationPlotter:
         plt.show()
 
     @staticmethod
-    def calculate_average_density(densities_for_each: numpy.typing.ArrayLike):
+    def calculate_average_electron_density(densities_for_each: numpy.typing.ArrayLike):
         return np.average(densities_for_each, axis=0)
 
     @staticmethod
@@ -292,7 +293,9 @@ class ElectronSimulationPlotter:
         )
         plt.show()
 
-        average_densities = cls.calculate_average_density(electron_densities_for_each)
+        average_densities = cls.calculate_average_electron_density(
+            electron_densities_for_each
+        )
 
         initially_occupied_densities = [d[0] for d in average_densities]
         initially_unoccupied_densities = [d[1] for d in average_densities]
@@ -332,38 +335,180 @@ class ElectronSimulationPlotter:
         plt.show()
 
     @classmethod
-    def plot_system_evolved_coherently(
-        cls, sim: ElectronSimulation, times: List[float], *args, **kwargs
-    ):
-        electron_densities = sim.simulate_system_coherently(times, *args, **kwargs)
-
-        cls._plot_electron_densities(electron_densities, times, sim.electron_energies)
-
-    @classmethod
-    def plot_random_system_evolved_coherently(
+    def plot_electron_densities(
         cls,
         sim: ElectronSimulation,
         times: List[float],
-        *args,
-        **kwargs,
+        thermal=False,
+        initial_electron_state_vector=None,
     ):
 
-        electron_densities = sim.simulate_random_system_coherently(
-            times, *args, **kwargs
+        electron_densities = sim.get_electron_densities(
+            times,
+            thermal=thermal,
+            initial_electron_state_vector=initial_electron_state_vector,
         )
 
         cls._plot_electron_densities(electron_densities, times, sim.electron_energies)
 
+    @staticmethod
+    def _plot_density_matrix(density_matrix: np.ndarray, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+        average_diagonal = 1 / density_matrix.shape[0]
+        average_not_diagonal = np.average(
+            np.abs(density_matrix[~np.eye(density_matrix.shape[0], dtype=bool)])
+        )
+        print(average_diagonal, average_not_diagonal)
+        ax.imshow(np.abs(density_matrix))
+        return ax.get_figure(), ax
+
     @classmethod
-    def plot_system_evolved_decoherently(
-        cls, sim: ElectronSimulation, times, *args, **kwargs
+    def plot_electron_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        time: float,
+        thermal=False,
+        ax=None,
     ):
-        electron_densities = sim.simulate_system_decoherently(times, *args, **kwargs)
 
-        cls._plot_electron_densities(electron_densities, times, sim.electron_energies)
+        density_matricies = sim.get_electron_density_matricies(
+            [time],
+            thermal=thermal,
+        )
+
+        return cls._plot_density_matrix(density_matricies[0], ax=ax)
 
     @classmethod
-    def plot_average_densities_of_system_evolved_coherently(
+    def plot_time_average_electron_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        times: List[float],
+        thermal=False,
+        ax=None,
+    ):
+
+        density_matricies = sim.get_electron_density_matricies(
+            times,
+            thermal=thermal,
+        )
+
+        return cls._plot_density_matrix(np.average(density_matricies, axis=0), ax=ax)
+
+    @classmethod
+    def plot_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        time: float,
+        thermal=False,
+        ax=None,
+    ):
+
+        density_matricies = sim.get_density_matricies(
+            [time],
+            thermal=thermal,
+        )
+
+        return cls._plot_density_matrix(density_matricies[0], ax=ax)
+
+    @classmethod
+    def plot_time_average_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        times: List[float],
+        thermal=False,
+        ax=None,
+    ):
+
+        density_matricies = sim.get_density_matricies(
+            times,
+            thermal=thermal,
+        )
+
+        return cls._plot_density_matrix(np.average(density_matricies, axis=0), ax=ax)
+
+    @staticmethod
+    def _get_average_non_diagonal_element(density_matrix):
+        return np.average(
+            np.abs(density_matrix[~np.eye(density_matrix.shape[0], dtype=bool)])
+        )
+
+    @classmethod
+    def _plot_off_diagonal_density_matrix(
+        cls, times, density_matricies: List[np.ndarray], ax=None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        average_off_diagonals = [
+            cls._get_average_non_diagonal_element(density_matrix)
+            for density_matrix in density_matricies
+        ]
+
+        ax.plot(times, average_off_diagonals)
+        ax.set_ylim([0, None])
+        return ax.get_figure(), ax
+
+    @classmethod
+    def plot_off_diagonal_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        times: List[float],
+        thermal=False,
+        ax=None,
+    ):
+
+        density_matricies = sim.get_density_matricies(
+            times,
+            thermal=thermal,
+        )
+
+        return cls._plot_off_diagonal_density_matrix(times, density_matricies, ax=ax)
+
+    @staticmethod
+    def _plot_average_off_diagonal_density_matrix(
+        average_over_times, normalised_average_off_daigonals, ax=None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        ax.plot(average_over_times, normalised_average_off_daigonals)
+        ax.set_ylim([0, None])
+        ax.set_xlabel("Time Averaged Over /s")
+        ax.set_ylabel("Average off Diagonal / Average Diagonal")
+        return ax.get_figure(), ax
+
+    @classmethod
+    def plot_average_off_diagonal_density_matrix(
+        cls,
+        sim: ElectronSimulation,
+        initial_time: float,
+        average_over_times: List[float],
+        average_over=10,
+        thermal=False,
+        ax=None,
+    ):
+        normalised_average_off_daigonals = []
+        average_diagonal = 1 / sim.number_of_electron_basis_states
+        for average_over_time in average_over_times:
+            density_matricies = sim.get_density_matricies(
+                times=np.linspace(
+                    initial_time, initial_time + average_over_time, average_over
+                ).tolist(),
+                thermal=thermal,
+            )
+            normalised_average_off_daigonals.append(
+                cls._get_average_non_diagonal_element(
+                    np.average(density_matricies, axis=0)
+                )
+                / average_diagonal
+            )
+        return cls._plot_average_off_diagonal_density_matrix(
+            average_over_times, normalised_average_off_daigonals, ax=ax
+        )
+
+    @classmethod
+    def plot_average_densities(
         cls,
         sim: ElectronSimulation,
         times: List[float],
@@ -371,7 +516,7 @@ class ElectronSimulationPlotter:
         period_of_noise_fluctuation=0,
         **kwargs,
     ):
-        electron_densities_for_each = sim.simulate_random_system_coherently_for_each(
+        electron_densities_for_each = sim.get_electron_densities_for_each(
             times, *args, **kwargs
         )
 
@@ -383,18 +528,264 @@ class ElectronSimulationPlotter:
         )
         return electron_densities_for_each
 
+    @classmethod
+    def _plot_average_electron_distribution(
+        cls,
+        initial_densities,
+        final_densities,
+        normalised_energies,
+        boltzmann_energy,
+        ax=None,
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+        cls.plot_average_density_against_energy(
+            densities=initial_densities,
+            energies=normalised_energies,
+            ax=ax,
+            label="FCC density",
+        )
+
+        cls.plot_average_density_against_energy(
+            densities=final_densities,
+            energies=normalised_energies,
+            ax=ax,
+            label="HCP density",
+        )
+        energies_for_plot = np.linspace(
+            normalised_energies[0], normalised_energies[-1], 1000
+        )
+
+        ax.plot(
+            energies_for_plot,
+            ElectronSimulationPlotter.fermi_distribution(
+                boltzmann_energy,
+                energies_for_plot,
+            ),
+            label="fermi-dirac",
+        )
+        ax.set_xlabel("Energy / J")
+        return ax.get_figure(), ax
+
+    @classmethod
+    def plot_average_electron_distribution(
+        cls,
+        sim: ElectronSimulation,
+        times: List[float],
+        average_over=10,
+        ax=None,
+    ):
+        def expected_occupation(mu):
+            return sum(
+                [
+                    1 / (1 + np.exp((energy - mu) / sim.boltzmann_energy))
+                    for energy in sim.electron_energies
+                ]
+            )
+
+        electron_energy_range = max(sim.electron_energies) - min(sim.electron_energies)
+        chemical_potential: float = scipy.optimize.brentq(
+            lambda x: expected_occupation(x) - sim.number_of_electrons,
+            max(sim.electron_energies) - 2 * electron_energy_range,
+            min(sim.electron_energies) + 2 * electron_energy_range,
+            xtol=electron_energy_range * 10 ** -6,
+        )  # type: ignore
+
+        normalised_energies = np.array(sim.electron_energies) - chemical_potential
+
+        initial_densities = []
+        final_densities = []
+        for _ in range(average_over):
+            electron_densities_for_each = sim.get_electron_densities(
+                times, thermal=True, new_hamiltonian=True
+            )
+
+            initial_state_densities_for_each = [
+                d[0] for d in electron_densities_for_each
+            ]
+            normalised_initial_state_densities = [
+                d if sum(d) == 0 else sim.number_of_electrons * d / sum(d)
+                for d in initial_state_densities_for_each
+            ]
+            initial_densities += normalised_initial_state_densities
+
+            final_state_densities_for_each = [d[1] for d in electron_densities_for_each]
+            normalised_final_state_densities = [
+                d if sum(d) == 0 else sim.number_of_electrons * d / sum(d)
+                for d in final_state_densities_for_each
+            ]
+            final_densities += normalised_final_state_densities
+
+        return cls._plot_average_electron_distribution(
+            initial_densities,
+            final_densities,
+            normalised_energies,
+            sim.boltzmann_energy,
+            ax,
+        )
+
+    @staticmethod
+    def _plot_energy_lines_with_summed_overlap(energies, summed_overlaps, axs=None):
+        if axs is None:
+            fig = plt.figure()
+            gs = gridspec.GridSpec(1, 6)
+            axs = [plt.subplot(gs[0, :-1]), plt.subplot(gs[0, -1])]
+
+        cmap = cm.get_cmap("viridis")
+
+        for (energy, overlap) in zip(energies, summed_overlaps):
+            axs[0].axvline(energy, color=cmap(overlap))
+        axs[0].set_title("Plot of eigenstate energy levels")
+        axs[0].set_xlabel("Energy /J")
+
+        cb1 = colorbar.ColorbarBase(
+            axs[1], cmap=cmap, orientation="vertical"
+        )  # type: ignore
+        axs[1].set_ylabel("Proportion of state in initial")
+        plt.show()
+
+        fig, ax = plt.subplots(1)
+
+        plt.show()
+
+    @classmethod
+    def plot_energy_lines_with_summed_overlap(cls, sim: ElectronSimulation, axs=None):
+        energies, summed_overlaps = sim.get_energies_and_summed_overlaps()
+        return cls._plot_energy_lines_with_summed_overlap(
+            energies, summed_overlaps, axs
+        )
+
+    @staticmethod
+    def _plot_summed_overlap_against_energy(energies, summed_overlaps, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        ax.plot(energies, summed_overlaps, "+")
+        ax.set_title("Plot of eigenstate energy levels")
+        ax.set_xlabel("Energy /J")
+        ax.set_ylabel("Overlap")
+        return ax.get_figure(), ax
+
+    @classmethod
+    def plot_summed_overlap_against_energy(cls, sim: ElectronSimulation, ax=None):
+        energies, summed_overlaps = sim.get_energies_and_summed_overlaps()
+        return cls._plot_summed_overlap_against_energy(energies, summed_overlaps, ax)
+
+    @staticmethod
+    def _plot_energies_with_maximum_overlap(
+        energies, overlaps, noninteracting_energies, ax=None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        flat_overlaps = np.array(
+            [[x[0] for x in o] + [x[1] for x in o] for o in overlaps]
+        )
+
+        largest_overlap_energies = noninteracting_energies[
+            np.argmax(flat_overlaps, axis=1)
+        ]
+
+        rtol = 0.01
+        fraction_of_overlap_degenerate_in_energy = [
+            np.sum(
+                np.where(
+                    np.isclose(
+                        largest_overlap_energy,
+                        noninteracting_energies,
+                        atol=0,
+                        rtol=rtol,
+                    ),
+                    flat_overlap,
+                    0,
+                )
+            )
+            for (largest_overlap_energy, flat_overlap) in zip(
+                largest_overlap_energies, flat_overlaps
+            )
+        ]
+
+        ax.plot(energies, fraction_of_overlap_degenerate_in_energy)
+        ax.set_xlabel("final state energies")
+        ax.set_ylabel("largest initial state energy overlap")
+        ax.set_title("Plot of initial state energy overlap fraction")
+        plt.show()
+
+    @classmethod
+    def plot_energies_with_maximum_overlap(cls, sim: ElectronSimulation, ax=None):
+        energies, overlaps = sim.get_energies_and_overlaps()
+        noninteracting_energies = sim.get_energies_without_interaction()
+        cls._plot_energies_with_maximum_overlap(
+            energies, overlaps, noninteracting_energies, ax
+        )
+
+    @staticmethod
+    def _plot_final_energy_against_initial_energy(
+        energies, overlaps, noninteracting_energies, ax=None, subplot_lims=None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        flat_overlaps = np.array(
+            [[x[0] for x in o] + [x[1] for x in o] for o in overlaps]
+        )
+
+        average_noninteracting_energies = np.array(
+            [
+                np.average(noninteracting_energies, axis=None, weights=flat_overlap)
+                for flat_overlap in flat_overlaps
+            ]
+        )
+        varience_noninteracting_energies = [
+            np.average(
+                (noninteracting_energies - average_energy) ** 2, weights=flat_overlap
+            )
+            for (flat_overlap, average_energy) in zip(
+                flat_overlaps, average_noninteracting_energies
+            )
+        ]
+
+        ax.errorbar(
+            average_noninteracting_energies,
+            energies,
+            xerr=np.sqrt(varience_noninteracting_energies),
+            fmt="+",
+        )
+        if subplot_lims is not None:
+            ax2: plt.Axes = ax.get_figure().add_axes([0.2, 0.55, 0.25, 0.25])
+            ax2.errorbar(
+                average_noninteracting_energies,
+                energies,
+                xerr=np.sqrt(varience_noninteracting_energies),
+                fmt="+",
+            )
+            ax2.set_xlim(subplot_lims[0])
+            ax2.set_ylim(subplot_lims[1])
+            ax2.set_yticks([subplot_lims[1][0], 0, subplot_lims[1][1]])
+
+        ax.set_ylabel("final state energies / J")
+        ax.set_xlabel("initial state energies / J")
+        ax.set_title("Plot of initial vs final state energies")
+        return ax.get_figure(), ax
+
+    @classmethod
+    def plot_final_energy_against_initial_energy(
+        cls, sim: ElectronSimulation, ax=None, subplot_lims=None
+    ):
+        energies, overlaps = sim.get_energies_and_overlaps()
+        noninteracting_energies = sim.get_energies_without_interaction()
+        return cls._plot_final_energy_against_initial_energy(
+            energies, overlaps, noninteracting_energies, ax, subplot_lims
+        )
+
     @staticmethod
     def fermi_distribution(boltzmann_energy, E):
         return 1 / (1 + np.exp(E / boltzmann_energy))
 
     @classmethod
-    def plot_normalisation_demonstration(
-        cls, config: ElectronSimulationConfig, times: list[float]
-    ):
+    def plot_normalisations(cls, config: ElectronSimulationConfig, times: list[float]):
         sim = ElectronSimulation(config)
-        normalisations = sim.simulate_random_system_normalisations_coherently(
-            times, thermal=True
-        )
+        normalisations = sim.get_normalisations(times, thermal=True)
 
         (fig, ax) = cls._plot_normalistation_against_time(normalisations, times)
         plt.show()
@@ -425,9 +816,7 @@ class ElectronSimulationPlotter:
             #         ])
             single_n_electron_densities.append(
                 np.sum(
-                    sim.simulate_random_system_coherently(times=[500000], thermal=True)[
-                        0
-                    ],
+                    sim.get_electron_densities(times=[500000], thermal=True)[0],
                     axis=0,
                 )
             )
@@ -485,9 +874,7 @@ class ElectronSimulationPlotter:
                 total_electron_densities.append(
                     thermal_weight
                     * number_of_states
-                    * sim.simulate_random_system_coherently(times=[0], thermal=True)[0][
-                        0
-                    ]
+                    * sim.get_electron_densities(times=[0], thermal=True)[0][0]
                 )
             corrected_electron_densities.append(
                 np.sum(total_electron_densities, axis=0) / (total_thermal_weight)
@@ -535,7 +922,7 @@ class ElectronSimulationPlotter:
         for _ in range(repeats):
             sim = ElectronSimulation(single_n_config)
             single_n_electron_densities.append(
-                sim.simulate_random_system_coherently(times=[0], thermal=True)[0][0]
+                sim.get_electron_densities(times=[0], thermal=True)[0][0]
             )
         # Assuming closely spaced- not true here
         central_energy_incorrect = config.boltzmann_energy * np.log(
@@ -638,9 +1025,7 @@ class ElectronSimulationPlotter:
                 total_electron_densities.append(
                     thermal_weight
                     * number_of_states
-                    * sim.simulate_random_system_coherently(times=[0], thermal=True)[0][
-                        0
-                    ]
+                    * sim.get_electron_densities(times=[0], thermal=True)[0][0]
                 )
 
             corrected_electron_densities.append(
@@ -675,12 +1060,12 @@ def plot_average_densities_example():
     )
     simulator = ElectronSimulation(config)
 
-    ElectronSimulationPlotter.plot_random_system_evolved_coherently(
+    ElectronSimulationPlotter.plot_electron_densities(
         simulator,
         np.linspace(0, 10000, 1000).tolist(),
     )
 
-    ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
+    ElectronSimulationPlotter.plot_average_densities(
         simulator,
         np.linspace(0, 10000, 1000).tolist(),
         average_over=100,
@@ -697,7 +1082,7 @@ def plot_normalisation_example():
         q_prefactor=1,
         electron_energy_jitter=lambda x: x,
     )
-    ElectronSimulationPlotter.plot_normalisation_demonstration(
+    ElectronSimulationPlotter.plot_normalisations(
         config, times=np.linspace(0, 1000, 1000).tolist()
     )
 
@@ -716,13 +1101,13 @@ def plot_thermal_example():
     )
     simulator = ElectronSimulation(config)
 
-    ElectronSimulationPlotter.plot_random_system_evolved_coherently(
+    ElectronSimulationPlotter.plot_electron_densities(
         simulator,
         times=np.linspace(0, 10, 1000).tolist(),
         thermal=True,
     )
 
-    ElectronSimulationPlotter.plot_average_densities_of_system_evolved_coherently(
+    ElectronSimulationPlotter.plot_average_densities(
         simulator,
         times=np.linspace(0, 40000, 1000).tolist(),
         average_over=20,

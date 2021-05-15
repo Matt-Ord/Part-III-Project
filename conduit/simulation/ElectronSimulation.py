@@ -83,16 +83,11 @@ class ElectronSimulation:
         return self.config.initial_occupancy
 
     @staticmethod
-    def get_electron_densities(electron_systems: List[ElectronSystem]):
+    def _get_electron_densities(electron_systems: List[ElectronSystem]):
         electron_densities = [
             system.get_electron_density_for_each_hydrogen()
             for system in electron_systems
         ]
-        return electron_densities
-
-    @staticmethod
-    def get_normalisations(electron_systems: List[ElectronSystem]):
-        electron_densities = [system.get_normalisation() for system in electron_systems]
         return electron_densities
 
     def get_electron_systems(
@@ -104,29 +99,9 @@ class ElectronSimulation:
         if new_hamiltonian:
             self.hamiltonian = self._create_hamiltonian()
 
-        # evolved_states = [
-        #     initial_system.evolve_system(self.hamiltonian, time, self.hbar)
-        #     for time in times
-        # ]
         evolved_systems = initial_system.evolve_system_vectorised(
             self.hamiltonian, times, self.hbar
         )
-        return evolved_systems
-
-    def get_electron_systems_decoherently(
-        self, initial_system: ElectronSystem, times: List[float]
-    ):
-        timesteps = [end - start for (start, end) in zip(times[:-1], times[1:])]
-
-        evolved_systems = [initial_system]
-        for t in timesteps:
-            evolved_systems.append(
-                evolved_systems[-1].evolve_system_decoherently(
-                    self.hamiltonian,
-                    t,
-                    self.hbar,
-                )
-            )
         return evolved_systems
 
     def _create_kinetic_hamiltonian(self) -> Hamiltonian:
@@ -173,76 +148,74 @@ class ElectronSimulation:
         return initial_system
 
     def _setup_random_initial_system(self, thermal=False):
-        boltzmann_factors = None
+        electron_boltzmann_factors = None
+        hydrogen_boltzmann_factors = None
         if thermal:
-            energy_offsets = self.electron_energies - np.average(self.electron_energies)
-            boltzmann_factors = energy_offsets / self.boltzmann_energy
+            electron_energy_offsets = self.electron_energies - np.average(
+                self.electron_energies
+            )
+            electron_boltzmann_factors = electron_energy_offsets / self.boltzmann_energy
+
+            hydrogen_energy_offsets = self.hydrogen_energies - np.average(
+                self.hydrogen_energies
+            )
+            hydrogen_boltzmann_factors = hydrogen_energy_offsets / self.boltzmann_energy
 
         initial_system = ElectronSystemUtil.create_random(
             ElectronSystem,
-            self.number_of_electron_states,
-            self.number_of_electrons,
-            boltzmann_factors,
-            self.initial_occupancy,
+            number_of_electron_states=self.number_of_electron_states,
+            number_of_electrons=self.number_of_electrons,
+            electron_boltzmann_factors=electron_boltzmann_factors,
+            hydrogen_boltzmann_factors=hydrogen_boltzmann_factors,
+            initial_occupancy=self.initial_occupancy,
         )
         return initial_system
 
-    def simulate_system_coherently(
-        self, times: List[float], initial_electron_state_vector=None
+    def get_electron_densities(
+        self,
+        times: List[float],
+        thermal=False,
+        initial_electron_state_vector=None,
+        new_hamiltonian=False,
     ):
-        initial_system = self._setup_explicit_initial_system(
-            initial_electron_state_vector
-        )
 
-        electron_densities = self.get_electron_densities(
-            self.get_electron_systems(initial_system, times)
+        if initial_electron_state_vector is not None:
+            initial_system = self._setup_explicit_initial_system(
+                initial_electron_state_vector
+            )
+        else:
+            initial_system = self._setup_random_initial_system(thermal)
+
+        electron_densities = self._get_electron_densities(
+            self.get_electron_systems(initial_system, times, new_hamiltonian)
         )
 
         return electron_densities
 
-    def simulate_random_system_coherently(self, times: List[float], thermal=False):
-        initial_system = self._setup_random_initial_system(thermal)
-
-        electron_densities = self.get_electron_densities(
-            self.get_electron_systems(initial_system, times)
-        )
-
+    @staticmethod
+    def _get_normalisations(electron_systems: List[ElectronSystem]):
+        electron_densities = [system.get_normalisation() for system in electron_systems]
         return electron_densities
 
-    def simulate_random_system_normalisations_coherently(
-        self, times: List[float], thermal=False
-    ):
+    def get_normalisations(self, times: List[float], thermal=False):
         initial_system = self._setup_random_initial_system(thermal)
 
-        normalisation = self.get_normalisations(
+        normalisation = self._get_normalisations(
             self.get_electron_systems(initial_system, times)
         )
 
         return normalisation
 
-    def simulate_system_decoherently(
-        self, times: List[float], initial_electron_state_vector=None
-    ):
-        initial_system = self._setup_explicit_initial_system(
-            initial_electron_state_vector
-        )
-
-        electron_densities = self.get_electron_densities(
-            self.get_electron_systems_decoherently(initial_system, times)
-        )
-
-        return electron_densities
-
     def _calculate_densities_for_each(self, initial_systems, times, jitter_for_each):
         electron_densities = [
-            self.get_electron_densities(
+            self._get_electron_densities(
                 self.get_electron_systems(initial_system, times, jitter_for_each)
             )
             for initial_system in initial_systems
         ]
         return np.array(electron_densities)
 
-    def simulate_random_system_coherently_for_each(
+    def get_electron_densities_for_each(
         self,
         times: List[float],
         average_over: int = 5,
@@ -277,6 +250,40 @@ class ElectronSimulation:
         kinetic_hamiltonian = self._create_kinetic_hamiltonian()
         return np.diagonal(kinetic_hamiltonian.as_matrix())
 
+    @staticmethod
+    def _get_density_matricies(electron_systems: List[ElectronSystem]):
+        density_matricies = [system.get_density_matrix() for system in electron_systems]
+        return density_matricies
+
+    def get_density_matricies(
+        self, times: List[float], thermal: bool = False
+    ) -> list[np.ndarray]:
+        initial_system = self._setup_random_initial_system(thermal)
+
+        density_matricies = self._get_density_matricies(
+            self.get_electron_systems(initial_system, times)
+        )
+
+        return density_matricies
+
+    @staticmethod
+    def _get_electron_density_matricies(electron_systems: List[ElectronSystem]):
+        density_matricies = [
+            system.get_electron_density_matrix() for system in electron_systems
+        ]
+        return density_matricies
+
+    def get_electron_density_matricies(
+        self, times: List[float], thermal: bool = False
+    ) -> list[np.ndarray]:
+        initial_system = self._setup_random_initial_system(thermal)
+
+        density_matricies = self._get_electron_density_matricies(
+            self.get_electron_systems(initial_system, times)
+        )
+
+        return density_matricies
+
 
 if __name__ == "__main__":
     config = ElectronSimulationConfig(
@@ -288,5 +295,5 @@ if __name__ == "__main__":
         q_prefactor=1,
     )
     simulator = ElectronSimulation(config)
-    simulator.simulate_random_system_coherently(np.linspace(0, 1000, 5000).tolist())
+    simulator.get_electron_densities(np.linspace(0, 1000, 5000).tolist())
     print("done")

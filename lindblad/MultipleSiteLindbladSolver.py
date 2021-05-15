@@ -1,3 +1,4 @@
+from functools import cache
 from typing import List, Tuple
 from LindbladSolver import LindbladSolver
 import numpy as np
@@ -51,6 +52,7 @@ class MultipleSiteLindbladSolver(LindbladSolver):
         )
         return np.sum(self._soln["y"][site_types == site_type], axis=0)
 
+    @cache
     def get_mean_square_distances(self) -> np.ndarray:
         square_distances = self.get_all_distance_from_origin() ** 2
         return np.sum((self.all_p_values().T * square_distances).T, axis=0)
@@ -135,7 +137,7 @@ class MultipleSiteWithSinksLindbladSolver(MultipleSiteLindbladSolver):
         times,
         temperature,
         initial_state_grid: np.ndarray,
-        events,
+        events=None,
         sink_coords: List[Tuple[int, int]] = [],
     ) -> None:
         super().__init__(times, temperature, initial_state_grid, events=events)

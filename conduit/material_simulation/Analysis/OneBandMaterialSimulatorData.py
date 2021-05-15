@@ -1,9 +1,10 @@
 # Utility class used to collect data from the one band material
 # simulator
 import pickle
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 import matplotlib.gridspec as gs
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import numpy as np
 import scipy.optimize
 from simulation.ElectronSimulationPlotter import (
@@ -89,33 +90,33 @@ class OneBandMaterialSimualtorData:
             bounds=[lower_bounds, upper_bounds],
         )
 
-    def generate_decay_time_data_fit_ex(self, omega, plot_each: bool = False):
-        decay_time_data = {}
-        for number_of_states, data_for_number_of_states in self._data.items():
-            decay_time_data[number_of_states] = {}
-            for (
-                number_of_electrons,
-                data_for_number_of_electrons,
-            ) in data_for_number_of_states.items():
-                decay_time_data[number_of_states][number_of_electrons] = []
-                for i, (times, densities) in enumerate(data_for_number_of_electrons):
-                    normalised_densities = np.array(densities) / number_of_electrons
-                    if (
-                        omega.get(number_of_states, {}).get(number_of_electrons, None)
-                        is not None
-                    ):
-                        a, b = self._fit_ex_electron_occupation_curve(
-                            times,
-                            normalised_densities,
-                            omega[number_of_states][number_of_electrons],
-                        )
-                        decay_time_data[number_of_states][number_of_electrons].append(
-                            (a[0], b[0][0])
-                        )
+    # def generate_decay_time_data_fit_ex(self, omega, plot_each: bool = False):
+    #     decay_time_data = {}
+    #     for number_of_states, data_for_number_of_states in self._data.items():
+    #         decay_time_data[number_of_states] = {}
+    #         for (
+    #             number_of_electrons,
+    #             data_for_number_of_electrons,
+    #         ) in data_for_number_of_states.items():
+    #             decay_time_data[number_of_states][number_of_electrons] = []
+    #             for i, (times, densities) in enumerate(data_for_number_of_electrons):
+    #                 normalised_densities = np.array(densities) / number_of_electrons
+    #                 if (
+    #                     omega.get(number_of_states, {}).get(number_of_electrons, None)
+    #                     is not None
+    #                 ):
+    #                     a, b = self._fit_ex_electron_occupation_curve(
+    #                         times,
+    #                         normalised_densities,
+    #                         omega[number_of_states][number_of_electrons],
+    #                     )
+    #                     decay_time_data[number_of_states][number_of_electrons].append(
+    #                         (a[0], b[0][0])
+    #                     )
 
-        if plot_each:
-            self.plot_each_decay_curve(omega, decay_time_data)
-        return OneBandDecayTimeData(decay_time_data)
+    #     if plot_each:
+    #         self.plot_each_decay_curve(omega, decay_time_data)
+    #     return OneBandDecayTimeData(decay_time_data)
 
     @staticmethod
     def _ex_squared_occupation_curve_fit_function(time, omega, decay_time):
@@ -163,42 +164,84 @@ class OneBandMaterialSimualtorData:
     def _linear_decay_curve_fit_function(time, decay_time, amplitude):
         return amplitude * np.maximum(1 - (time / decay_time), 0) + 0.5
 
-    def generate_decay_time_data_fit_ex_squared(self, omega, plot_each: bool = False):
-        decay_time_data = {}
-        for number_of_states, data_for_number_of_states in self._data.items():
-            decay_time_data[number_of_states] = {}
-            for (
-                number_of_electrons,
-                data_for_number_of_electrons,
-            ) in data_for_number_of_states.items():
-                decay_time_data[number_of_states][number_of_electrons] = []
-                for i, (times, densities) in enumerate(data_for_number_of_electrons):
-                    normalised_densities = np.array(densities) / number_of_electrons
-                    if (
-                        omega.get(number_of_states, {}).get(number_of_electrons, None)
-                        is not None
-                    ):
-                        if 0 == omega[number_of_states][number_of_electrons]:
-                            a, b = self._fit_ex_squared_electron_occupation_curve(
-                                times,
-                                normalised_densities,
-                                omega[number_of_states][number_of_electrons],
-                            )
-                        else:
-                            a, b = self._fit_ex_electron_occupation_curve(
-                                times,
-                                normalised_densities,
-                                omega[number_of_states][number_of_electrons],
-                            )
-                        decay_time_data[number_of_states][number_of_electrons].append(
-                            (a[0], b[0][0])
-                        )
+    # def generate_decay_time_data_fit_ex_squared(self, omega, plot_each: bool = False):
+    #     decay_time_data = {}
+    #     for number_of_states, data_for_number_of_states in self._data.items():
+    #         decay_time_data[number_of_states] = {}
+    #         for (
+    #             number_of_electrons,
+    #             data_for_number_of_electrons,
+    #         ) in data_for_number_of_states.items():
+    #             decay_time_data[number_of_states][number_of_electrons] = []
+    #             for i, (times, densities) in enumerate(data_for_number_of_electrons):
+    #                 normalised_densities = np.array(densities) / number_of_electrons
+    #                 if (
+    #                     omega.get(number_of_states, {}).get(number_of_electrons, None)
+    #                     is not None
+    #                 ):
+    #                     if 0 == omega[number_of_states][number_of_electrons]:
+    #                         a, b = self._fit_ex_squared_electron_occupation_curve(
+    #                             times,
+    #                             normalised_densities,
+    #                             omega[number_of_states][number_of_electrons],
+    #                         )
+    #                     else:
+    #                         a, b = self._fit_ex_electron_occupation_curve(
+    #                             times,
+    #                             normalised_densities,
+    #                             omega[number_of_states][number_of_electrons],
+    #                         )
+    #                     decay_time_data[number_of_states][number_of_electrons].append(
+    #                         (a[0], b[0][0])
+    #                     )
 
-        if plot_each:
-            self.plot_each_decay_curve(omega, decay_time_data)
-        return OneBandDecayTimeData(decay_time_data)
+    #     if plot_each:
+    #         self.plot_each_decay_curve(omega, decay_time_data)
+    #     return OneBandDecayTimeData(decay_time_data)
 
-    def plot_each_decay_curve(self, omega: Dict[int, Dict[int, float]], times):
+    # def plot_each_decay_curve(self, omega: Dict[int, Dict[int, float]], times):
+    #     for number_of_states, time_for_number_of_states in times.items():
+    #         for (
+    #             number_of_electrons,
+    #             time,
+    #         ) in time_for_number_of_states.items():
+    #             densities_data = self._data[number_of_states][number_of_electrons]
+    #             print(number_of_states, number_of_electrons)
+    #             if (
+    #                 omega.get(number_of_states, {}).get(number_of_electrons, None)
+    #                 is None
+    #             ):
+    #                 continue
+    #             if 0 == omega[number_of_states][number_of_electrons]:
+    #                 ElectronSimulationPlotter._plot_total_number_against_time(
+    #                     number_in_each_state={
+    #                         "actual": np.array(densities_data[0][1])
+    #                         / number_of_electrons,
+    #                         "average": self._ex_squared_occupation_curve_fit_function(
+    #                             np.array(densities_data[0][0]),
+    #                             omega[number_of_states][number_of_electrons],
+    #                             time[0][0],
+    #                         ),
+    #                     },
+    #                     times=densities_data[0][0],
+    #                 )
+    #             else:
+    #                 ElectronSimulationPlotter._plot_total_number_against_time(
+    #                     number_in_each_state={
+    #                         "actual": np.array(densities_data[0][1])
+    #                         / number_of_electrons,
+    #                         "average": self._ex_occupation_curve_fit_function(
+    #                             np.array(densities_data[0][0]),
+    #                             omega[number_of_states][number_of_electrons],
+    #                             time[0][0],
+    #                         ),
+    #                     },
+    #                     times=densities_data[0][0],
+    #                 )
+
+    #             plt.show()
+
+    def plot_each_decay_curve(self, times, offset, fit_fn):
         for number_of_states, time_for_number_of_states in times.items():
             for (
                 number_of_electrons,
@@ -206,52 +249,10 @@ class OneBandMaterialSimualtorData:
             ) in time_for_number_of_states.items():
                 densities_data = self._data[number_of_states][number_of_electrons]
                 print(number_of_states, number_of_electrons)
-                if (
-                    omega.get(number_of_states, {}).get(number_of_electrons, None)
-                    is None
-                ):
-                    continue
-                if 0 == omega[number_of_states][number_of_electrons]:
-                    ElectronSimulationPlotter._plot_total_number_against_time(
-                        number_in_each_state={
-                            "actual": np.array(densities_data[0][1])
-                            / number_of_electrons,
-                            "average": self._ex_squared_occupation_curve_fit_function(
-                                np.array(densities_data[0][0]),
-                                omega[number_of_states][number_of_electrons],
-                                time[0][0],
-                            ),
-                        },
-                        times=densities_data[0][0],
-                    )
-                else:
-                    ElectronSimulationPlotter._plot_total_number_against_time(
-                        number_in_each_state={
-                            "actual": np.array(densities_data[0][1])
-                            / number_of_electrons,
-                            "average": self._ex_occupation_curve_fit_function(
-                                np.array(densities_data[0][0]),
-                                omega[number_of_states][number_of_electrons],
-                                time[0][0],
-                            ),
-                        },
-                        times=densities_data[0][0],
-                    )
-
-                plt.show()
-
-    def plot_each_decay_curve2(self, times, offset, fit_fn):
-        for number_of_states, time_for_number_of_states in times.items():
-            for (
-                number_of_electrons,
-                time,
-            ) in time_for_number_of_states.items():
-                densities_data = self._data[number_of_states][number_of_electrons]
-                print(number_of_states, number_of_electrons)
-
+                print(densities_data, offset)
                 ElectronSimulationPlotter._plot_total_number_against_time(
                     number_in_each_state={
-                        "actual": np.array(densities_data[0][1]) / number_of_electrons,
+                        "actual": np.array(densities_data[2][1]) / number_of_electrons,
                         "average": fit_fn(
                             np.array(densities_data[0][0]),
                             time[0][0],
@@ -339,27 +340,27 @@ class OneBandMaterialSimualtorData:
                         )
 
         if plot_each:
-            self.plot_each_decay_curve2(
+            self.plot_each_decay_curve(
                 decay_time_data,
                 amplitude,
                 fit_fn=fit_fn,
             )
         return OneBandDecayTimeData(decay_time_data)
 
-    def generate_decay_time_data_fit_ex_squared_manually(
-        self, omega, times, plot_each: bool = False
-    ):
-        decay_time_data = {}
-        for number_of_states, time_for_number_of_states in times.items():
-            decay_time_data[number_of_states] = {}
-            for (
-                number_of_electrons,
-                time,
-            ) in time_for_number_of_states.items():
-                decay_time_data[number_of_states][number_of_electrons] = [[time, 0]]
+        # def generate_decay_time_data_fit_ex_squared_manually(
+        #     self, omega, times, plot_each: bool = False
+        # ):
+        #     decay_time_data = {}
+        #     for number_of_states, time_for_number_of_states in times.items():
+        #         decay_time_data[number_of_states] = {}
+        #         for (
+        #             number_of_electrons,
+        #             time,
+        #         ) in time_for_number_of_states.items():
+        #             decay_time_data[number_of_states][number_of_electrons] = [[time, 0]]
 
-        if plot_each:
-            self.plot_each_decay_curve(omega, decay_time_data)
+        #     if plot_each:
+        #         self.plot_each_decay_curve(omega, decay_time_data)
 
         return OneBandDecayTimeData(decay_time_data)
 
@@ -560,7 +561,7 @@ class OneBandDecayTimeData:
             all_decay_rates.extend(plot_decay_rates)
         return all_occupations, all_decay_rates
 
-    def plot_rate_for_each_state(self, ignore_single, ax):
+    def plot_rate_for_each(self, ignore_single, ax, color="#1f77b4"):
         all_occupations = []
         all_decay_rates = []
         for number_of_states, data_for_number_of_states in self._data.items():
@@ -594,7 +595,7 @@ class OneBandDecayTimeData:
                 plot_decay_rates,
                 yerr=np.array(plot_decay_rate_errors),
                 fmt="+",
-                label=number_of_states,
+                color=color,
             )
 
             all_occupations.extend(plot_occupations)
@@ -604,23 +605,46 @@ class OneBandDecayTimeData:
     def plot_decay_rates_against_occupation(
         self,
         ignore_single=False,
-        for_each="state",
         display=["cosh", "cosh exponential", "cosh with log", "linear"],
+        points_to_colour: Dict[str, List[Tuple[int, int]]] = {},
     ):
-        fig = plt.figure(figsize=(10, 5))
-        spec = gs.GridSpec(1, 2, width_ratios=[20, 1])
-        ax = fig.add_subplot(spec[0])
-        lax = fig.add_subplot(spec[1])
-        if for_each == "state":
-            all_occupations, all_decay_rates = self.plot_rate_for_each_state(
-                ignore_single, ax
-            )
-        elif for_each == "electron":
-            all_occupations, all_decay_rates = self.plot_rate_for_each_elecron(
-                ignore_single, ax
-            )
-        else:
-            all_occupations, all_decay_rates = [[], []]
+        fig, ax = plt.subplots(1)
+        # fig = plt.figure(figsize=(10, 5))
+        # spec = gs.GridSpec(1, 2, width_ratios=[20, 1])
+        # ax = fig.add_subplot(spec[0])
+        # lax = fig.add_subplot(spec[1])
+        all_occupations, all_decay_rates = self.plot_rate_for_each(ignore_single, ax)
+        colour_cycle = cmap = cm.get_cmap("viridis")(
+            np.linspace(0, 1, len(points_to_colour))
+        )
+        for color, (label, points) in zip(colour_cycle, points_to_colour.items()):
+            for i, (number_of_states, number_of_electrons) in enumerate(points):
+                data_for_number_of_electrons = self._data[number_of_states][
+                    number_of_electrons
+                ]
+                occupation = number_of_electrons / number_of_states
+                decay_rate = 1 / np.average(
+                    [d[0] for d in data_for_number_of_electrons]
+                )
+                error = np.average([d[0] for d in data_for_number_of_electrons]) ** (
+                    -2
+                ) * np.var([d[0] for d in data_for_number_of_electrons]) ** (0.5)
+                ax.errorbar(
+                    occupation,
+                    decay_rate,
+                    yerr=error,
+                    fmt="+",
+                    color=color,
+                    label=label if i == 0 else None,
+                )
+        # if for_each == "state":
+
+        # elif for_each == "electron":
+        #     all_occupations, all_decay_rates = self.plot_rate_for_each_elecron(
+        #         ignore_single, ax
+        #     )
+        # else:
+        #     all_occupations, all_decay_rates = [[], []]
 
         if "quadratic" in display:
             a, b = self.fit_rate_curve(
@@ -648,7 +672,7 @@ class OneBandDecayTimeData:
                 self._fixed_quadratic_decay_rate_curve(
                     np.linspace(0.01, 0.99, 1000), a[0]
                 ),
-                label="quadratic fit 2",
+                label="N(1-N) fit",
                 linestyle="-",
                 marker="",
             )
@@ -658,6 +682,16 @@ class OneBandDecayTimeData:
                 a[0],
                 "error",
                 b,
+            )
+        else:
+            ax.plot(
+                np.linspace(0.01, 0.99, 1000),
+                self._fixed_quadratic_decay_rate_curve(
+                    np.linspace(0.01, 0.99, 1000), 3864
+                ),
+                label="N(1-N)",
+                linestyle="-",
+                marker="",
             )
         if "linear" in display:
             a, b = self.fit_rate_curve(
@@ -722,9 +756,13 @@ class OneBandDecayTimeData:
                 marker="",
             )
 
-        handles, labels = ax.get_legend_handles_labels()
-        lax.legend(handles, labels, borderaxespad=0)
-        lax.axis("off")
+        # handles, labels = ax.get_legend_handles_labels()
+        # lax.legend(handles, labels, borderaxespad=0)
+        # lax.axis("off")
+        ax.legend()
+        ax.set_xlabel("Occupation Fraction N")
+        ax.set_ylabel(r"Rate / $s^{-1}$")
+        ax.set_title("Plot of Occupation-Rate Curve")
 
         fig.tight_layout()
         plt.show()
@@ -909,11 +947,11 @@ class OneBandDecayTimeData:
         plt.show()
 
     @staticmethod
-    def _exponential_curve(y, offset, amplitude):
-        return offset + (amplitude / y) ** 2
+    def _exponential_curve(x, offset, amplitude, power=2):
+        return offset + (amplitude / x) ** power
 
     @classmethod
-    def _fit_rate_curve(cls, x, y, fit_kwargs) -> Any:
+    def _fit_rate_curve_with_offset(cls, x, y, fit_kwargs) -> Any:
         return scipy.optimize.curve_fit(
             f=lambda *args: cls._exponential_curve(*args, **fit_kwargs),
             xdata=x,
@@ -923,7 +961,9 @@ class OneBandDecayTimeData:
             p0=[np.min(y), 1],
         )
 
-    def plot_decay_rate_against_number_of_electrons(self, fit_kwargs={}):
+    def plot_decay_rate_const_occupation(
+        self, fit_kwargs={}, title="Plot of decay rate against number of electrons"
+    ):
         flat_data = self.get_flattened_data()
         number_of_electrons = [k[1] for k in flat_data.keys()]
         decay_rates = [1 / np.average([d[0] for d in v]) for v in flat_data.values()]
@@ -938,11 +978,11 @@ class OneBandDecayTimeData:
         #                 np.average([d[0] for d in data_for_number_of_states]) ** (-2)
         #                 * np.var([d[0] for d in data_for_number_of_states]) ** (0.5)
         #             )
-        print(np.min(decay_rates))
-        a, b = self._fit_rate_curve(
+        print("min decay rate", np.min(decay_rates))
+        a, b = self._fit_rate_curve_with_offset(
             x=number_of_electrons, y=decay_rates, fit_kwargs=fit_kwargs
         )
-        print(a)
+        print("offset, amplitude", a, b)
 
         n_electrons_for_fit = np.linspace(2, 8, 1000)
         fig, ax = plt.subplots(1)
@@ -958,25 +998,122 @@ class OneBandDecayTimeData:
             self._exponential_curve(n_electrons_for_fit, *a, **fit_kwargs),
             label="fit",
         )
-        ax.legend()
-        ax.set_title("Plot of decay rate against number of electrons")
+        # ax.legend()
+        ax.set_title(title)
+        ax.set_xlabel("Number Of Electrons")
+        ax.set_ylabel("Decay Rate R(N) / $s^{-1}$")
         plt.show()
         fig, ax = plt.subplots(1)
         log_errors = [dy / y for (y, dy) in zip(decay_rates, decay_errors)]
         ax.errorbar(
             np.log(number_of_electrons),
-            np.log(np.array(decay_rates) - a[0]),
+            np.log((np.array(decay_rates) - a[0]) / a[0]),
             label="data",
             yerr=log_errors,
             fmt="+",
         )
         ax.plot(
             np.log(n_electrons_for_fit),
-            np.log(self._exponential_curve(n_electrons_for_fit, 0, a[1], **fit_kwargs)),
+            np.log(
+                self._exponential_curve(n_electrons_for_fit, 0, a[1], **fit_kwargs)
+                / a[0]
+            ),
             label="fit",
         )
+        # ax.legend()
+        ax.set_xlabel("log(Number Of Electrons)")
+        ax.set_ylabel(r"log(R(N) - R($\infty{}$) / R($\infty{}$))")
+        ax.set_title(title)
+        plt.show()
+
+    def plot_decay_rate_const_elecron_number(self):
+        OneBandDecayTimeDataUtil.plot_decay_rate_const_elecron_number(datas={"": self})
+
+
+class OneBandDecayTimeDataUtil:
+    @staticmethod
+    def plot_decay_rate_const_elecron_number(datas: Dict[str, OneBandDecayTimeData]):
+        fig, ax = plt.subplots(1)
+        for i, (label, data) in enumerate(datas.items()):
+            color = f"C{i}"
+            flat_data = data.get_flattened_data()
+            number_of_states = np.array([k[0] for k in flat_data.keys()])
+            decay_rates = [
+                1 / np.average([d[0] for d in v]) for v in flat_data.values()
+            ]
+            decay_errors = [
+                np.average([d[0] for d in v]) ** (-2)
+                * np.var([d[0] for d in v]) ** (0.5)
+                for v in flat_data.values()
+            ]
+            print(decay_rates)
+            a1, b1 = scipy.optimize.curve_fit(  # type: ignore
+                f=lambda x, a, b: 4 * a * x + b * x ** 2,
+                xdata=1 / number_of_states,
+                ydata=decay_rates,
+            )
+            print(f"{label} ax+bx^2", a1, "error", b1)
+
+            n_states_for_fit = np.linspace(0, 1 / 3, 1000)
+            ax.errorbar(
+                1 / number_of_states,
+                decay_rates,
+                label=f"{label}",
+                yerr=decay_errors,
+                fmt="+",
+                color=color,
+            )
+            ax.plot(
+                n_states_for_fit,
+                4 * a1[0] * n_states_for_fit + a1[1] * n_states_for_fit ** 2,
+                color=color,
+            )
         ax.legend()
-        ax.set_title("Plot of decay rate against number of electrons")
+        ax.set_title("Plot of Decay Rate Against Number of States")
+        ax.set_ylabel(r"Decay Rate R(N) / $s^{-1}$")
+        ax.set_xlabel(r"Occupation Fraction $N=\frac{n}{s}$")
+        plt.show()
+
+        fig, ax = plt.subplots(1)
+        combined_rates = []
+        combined_number_of_states = []
+        for i, (label, data) in enumerate(datas.items()):
+            flat_data = data.get_flattened_data()
+            number_of_states = np.array([k[0] for k in flat_data.keys()])
+            decay_rates = [
+                1 / np.average([d[0] for d in v]) for v in flat_data.values()
+            ]
+            decay_errors = [
+                np.average([d[0] for d in v]) ** (-2)
+                * np.var([d[0] for d in v]) ** (0.5)
+                for v in flat_data.values()
+            ]
+
+            ax.errorbar(
+                1 / number_of_states,
+                decay_rates,
+                label=f"{label}",
+                yerr=decay_errors,
+                fmt="+",
+            )
+            combined_rates.extend(decay_rates)
+            combined_number_of_states.extend(number_of_states)
+
+        a1, b1 = scipy.optimize.curve_fit(  # type: ignore
+            f=lambda x, a, b: 4 * a * x + b * x ** 2,
+            xdata=1 / np.array(combined_number_of_states),
+            ydata=combined_rates,
+        )
+        print(f"combined ax+bx^2", a1, "error", b1)
+        n_states_for_fit = np.linspace(0, 1 / 3, 1000)
+        ax.plot(
+            n_states_for_fit,
+            4 * a1[0] * n_states_for_fit + a1[1] * n_states_for_fit ** 2,
+        )
+        ax.set_title("Plot of Decay Rate Against Number of States")
+        ax.set_ylabel(r"Decay Rate R(N) / $s^{-1}$")
+        ax.set_xlabel(r"Occupation Fraction $N=\frac{n}{s}$")
+        ax.legend()
         plt.show()
 
 
@@ -1026,7 +1163,7 @@ class OneBandMaterialSimualtorDataUtil:
 
         data = OneBandMaterialSimualtorData.load_from_file(save_to)
         for i in range(number_of_repeats):
-            average_densities = simulator.simulate_average_densities(
+            average_densities = simulator.get_average_electron_densities(
                 times, average_over, jitter_electrons=True
             )
             initially_occupied_densities = [d[0] for d in average_densities]
@@ -1040,36 +1177,37 @@ class OneBandMaterialSimualtorDataUtil:
 
         return data
 
-    @staticmethod
-    def plot_decay_times_fitted_ex_squared(load_from):
-        data = OneBandMaterialSimualtorData.load_from_file(load_from)
-        # omega = {
-        #     8: {6: 2189000},
-        # }
-        # plot_each = True
-        # Longer time, wt smaller w smaller
-        decay_data = data.generate_decay_time_data_fit_ex_squared(
-            rough_data.omega_150K, plot_each=False
-        )
-        decay_data.plot_decay_rates_against_occupation(ignore_single=True, display=[])
-        decay_data.plot_log_decay_rates_against_occupation(
-            ignore_single=True, display=[]
-        )
+    # @staticmethod
+    # def plot_decay_times_fitted_ex_squared(load_from):
+    #     data = OneBandMaterialSimualtorData.load_from_file(load_from)
+    #     # omega = {
+    #     #     8: {6: 2189000},
+    #     # }
+    #     # plot_each = True
+    #     # Longer time, wt smaller w smaller
+    #     # decay_data = data.generate_decay_time_data_fit_wavepacket(
+    #     #     fit_fn=data._ex_squared_decay_curve_fit_function,
+    #     #     rough_data.omega_150K, plot_each=False
+    #     # )
+    #     decay_data.plot_decay_rates_against_occupation(ignore_single=True, display=[])
+    #     decay_data.plot_log_decay_rates_against_occupation(
+    #         ignore_single=True, display=[]
+    #     )
 
-    @staticmethod
-    def plot_decay_times_fitted_ex_squared_manually(load_from):
-        data = OneBandMaterialSimualtorData.load_from_file(load_from)
+    # @staticmethod
+    # def plot_decay_times_fitted_ex_squared_manually(load_from):
+    #     data = OneBandMaterialSimualtorData.load_from_file(load_from)
 
-        plot_each = False
-        # omega = {
-        #     8: {6: 2189000},
-        # }
-        # Longer time, wt smaller w smaller
-        decay_data = data.generate_decay_time_data_fit_ex_squared_manually(
-            rough_data.omega_150K, rough_data.times_150K, plot_each=plot_each
-        )
-        decay_data.plot_decay_rates_against_occupation(ignore_single=True)
-        decay_data.plot_log_decay_rates_against_occupation(ignore_single=True)
+    #     plot_each = False
+    #     # omega = {
+    #     #     8: {6: 2189000},
+    #     # }
+    #     # Longer time, wt smaller w smaller
+    #     decay_data = data.generate_decay_time_data_fit_ex_squared_manually(
+    #         rough_data.omega_150K, rough_data.times_150K, plot_each=plot_each
+    #     )
+    #     decay_data.plot_decay_rates_against_occupation(ignore_single=True)
+    #     decay_data.plot_log_decay_rates_against_occupation(ignore_single=True)
 
     @staticmethod
     def plot_decay_times_fitted_ex_squared_corrected_manually(load_from):
@@ -1098,14 +1236,87 @@ class OneBandMaterialSimualtorDataUtil:
         plot_each = False
         data1 = data.filter_data(
             filter=lambda n_states, n_electrons: n_states
-            > 3  # True  # n_states == 8 and n_electrons == 5
+            > 4  # True  # n_states == 8 and n_electrons == 5
         )
-        # decay_data = data1.generate_decay_time_data_fit_ex_squared_wavepacket(
-        #     plot_each=plot_each, fixed_amplitude=False
-        # )
-        # decay_data.plot_decay_rates_against_occupation(
-        #     display=["linear", "quadratic2"], for_each="electron"
-        # )
+        decay_data = data1.generate_decay_time_data_fit_wavepacket(
+            fit_fn=data1._ex_squared_decay_curve_fit_function,
+            plot_each=plot_each,
+            fixed_amplitude=None,
+            max_over=40,
+        )
+        decay_data.plot_decay_rates_against_occupation(
+            display=[],  # ["linear", "quadratic2"],
+            points_to_colour={
+                "half filled states": [(14, 7), (12, 6), (10, 5), (8, 4), (6, 3)],
+                "third filled states": [
+                    (6, 2),
+                    (9, 3),
+                    (12, 4),
+                    (15, 5),
+                    (6, 4),
+                    (9, 6),
+                    (12, 8),
+                    (15, 10),
+                ],
+            },
+        )
+        data_1_electron = data.filter_data(
+            lambda n_states, n_electrons: n_electrons == 1 and n_states > 2
+        )
+        data_2_electron = data.filter_data(
+            lambda n_states, n_electrons: n_electrons == 2
+        )
+        data_1_hole = data.filter_data(
+            lambda n_states, n_electrons: n_states - n_electrons == 1 and n_states > 2
+        )
+        data_2_hole = data.filter_data(
+            lambda n_states, n_electrons: n_states - n_electrons == 2 and n_states > 2
+        )
+        decay_data_1_electron = data_1_electron.generate_decay_time_data_fit_wavepacket(
+            fit_fn=data_1_electron._ex_squared_decay_curve_fit_function,
+            plot_each=plot_each,
+            fixed_amplitude=None,
+        )
+        decay_data_2_electron = data_2_electron.generate_decay_time_data_fit_wavepacket(
+            fit_fn=data_2_electron._ex_squared_decay_curve_fit_function,
+            plot_each=plot_each,
+            fixed_amplitude=None,
+        )
+        decay_data_1_hole = data_1_hole.generate_decay_time_data_fit_wavepacket(
+            fit_fn=data_1_hole._ex_squared_decay_curve_fit_function,
+            plot_each=plot_each,
+            fixed_amplitude=None,
+        )
+        decay_data_2_hole = data_2_hole.generate_decay_time_data_fit_wavepacket(
+            fit_fn=data_2_hole._ex_squared_decay_curve_fit_function,
+            plot_each=plot_each,
+            fixed_amplitude=None,
+        )
+        OneBandDecayTimeDataUtil.plot_decay_rate_const_elecron_number(
+            datas={
+                "one electron": decay_data_1_electron,
+                "one hole": decay_data_1_hole,
+            }
+        )
+        OneBandDecayTimeDataUtil.plot_decay_rate_const_elecron_number(
+            datas={
+                "two electron": decay_data_2_electron,
+                "two hole": decay_data_2_hole,
+            }
+        )
+
+        third_filled_data = data.filter_data(
+            lambda n_states, n_electrons: n_states / n_electrons == 3 and n_states != 2
+        )
+        third_filled_decay_data = (
+            third_filled_data.generate_decay_time_data_fit_wavepacket(
+                fit_fn=data1._ex_squared_decay_curve_fit_function,
+                plot_each=False,
+                fixed_amplitude=None,
+                max_over=30,
+            )
+        )
+        third_filled_decay_data.plot_decay_rate_const_occupation()
 
         half_filled_data = data.filter_data(
             lambda n_states, n_electrons: n_states / n_electrons == 2 and n_states != 2
@@ -1114,10 +1325,13 @@ class OneBandMaterialSimualtorDataUtil:
             half_filled_data.generate_decay_time_data_fit_wavepacket(
                 fit_fn=data1._ex_squared_decay_curve_fit_function,
                 plot_each=plot_each,
-                fixed_amplitude=False,
+                fixed_amplitude=None,
             )
         )
-        half_filled_decay_data.plot_decay_rate_against_number_of_electrons()
+        half_filled_decay_data.plot_decay_rate_const_occupation(
+            title="Plot Of Decay Rate Against Number Of Electrons\n"
+            + r"for an Occupation Fraction $N=\frac{1}{2}$"
+        )
 
     @staticmethod
     def plot_decay_times_no_diagonal(load_from):
@@ -1135,7 +1349,7 @@ class OneBandMaterialSimualtorDataUtil:
             max_over=30,
         )
         decay_data.plot_decay_rates_against_occupation(
-            display=["linear", "quadratic2"], for_each="electron"
+            display=["quadratic2"],
         )
 
         half_filled_data = data.filter_data(
@@ -1148,20 +1362,18 @@ class OneBandMaterialSimualtorDataUtil:
                 fixed_amplitude=False,
             )
         )
-        half_filled_decay_data.plot_decay_rate_against_number_of_electrons(
-            fit_kwargs={}
-        )
+        half_filled_decay_data.plot_decay_rate_const_occupation(fit_kwargs={})
 
-    @staticmethod
-    def plot_decay_times_fitted_ex(load_from):
-        data = OneBandMaterialSimualtorData.load_from_file(load_from)
+    # @staticmethod
+    # def plot_decay_times_fitted_ex(load_from):
+    #     data = OneBandMaterialSimualtorData.load_from_file(load_from)
 
-        plot_each = False
-        decay_data = data.generate_decay_time_data_fit_ex(
-            rough_data.omega_150K, plot_each=plot_each
-        )
-        decay_data.plot_decay_rates_against_occupation()
-        decay_data.plot_log_decay_rates_against_occupation()
+    #     plot_each = False
+    #     decay_data = data.generate_decay_time_data_fit_ex(
+    #         rough_data.omega_150K, plot_each=plot_each
+    #     )
+    #     decay_data.plot_decay_rates_against_occupation()
+    #     decay_data.plot_log_decay_rates_against_occupation()
 
     @staticmethod
     def fix_data(stop_times, load_from, save_to):
@@ -1181,42 +1393,43 @@ class OneBandMaterialSimualtorDataUtil:
     @staticmethod
     def delete_data(load_from):
         data = OneBandMaterialSimualtorData.load_from_file(load_from)
-        print(len(data._data[41][1]))
-        print(len(data._data[41][1][:-10]))
+        print(len(data._data[15][10]))
+        print(len(data._data[15][10][:-4]))
         # _data = data._data
-        # _data[41][1] = data._data[41][1][:-10]
-        # # data.clear_data(16, 1)
+        # _data[15][10] = data._data[15][10][:-4]
+        # data.clear_data(15, 5)
         # # data.clear_data(23, 22)
         # data._data = _data
-        print(len(data._data[41][1]))
-        data.save_to_file(load_from)
+        print(len(data._data[15][10]))
+        # data.save_to_file(load_from)
 
 
 def simulate_times():
-    for n_states, stop_times in rough_data.rough_150K_100_average_no_diagonal.items():
+    for n_states, stop_times in rough_data.rough_150K_corrected_50_average.items():
         print(n_states)
         n_points = {n_electrons: 2000 for n_electrons in stop_times.keys()}
         OneBandMaterialSimualtorDataUtil.simulate_all_tunnelling_times(
             number_of_states=n_states,
             stop_times=stop_times,
             number_of_points=n_points,
-            average_over=100,
+            average_over=50,
             number_of_repeats=4,
-            save_to="conduit data/150K data no diagonal.pkl",
-            diagonal_terms=False,
+            save_to="conduit data/150K data with exchange2.pkl",
         )
 
 
 if __name__ == "__main__":
     # simulate_times()
 
-    # OneBandMaterialSimualtorDataUtil.delete_data("conduit data/150K data.pkl")
+    # OneBandMaterialSimualtorDataUtil.delete_data(
+    #     "conduit data/150K data with exchange2.pkl"
+    # )
     # OneBandMaterialSimualtorDataUtil.plot_decay_times_fitted_ex(
     #     "conduit data/150K data.pkl"
     # )
-    OneBandMaterialSimualtorDataUtil.plot_decay_times_no_diagonal(
-        "conduit data/150K data no diagonal.pkl"
-    )
+    # OneBandMaterialSimualtorDataUtil.plot_decay_times_no_diagonal(
+    #     "conduit data/150K data no diagonal.pkl"
+    # )
     OneBandMaterialSimualtorDataUtil.plot_decay_times_corrected(
         "conduit data/150K data with exchange2.pkl"
     )

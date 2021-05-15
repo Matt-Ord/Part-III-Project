@@ -39,7 +39,7 @@ if __name__ == "__main__":
     #     times=np.linspace(0, 1 * 10 ** -5, 1000).tolist(), initial_occupancy=0.5
     # )
 
-    nickel_sim.simulate_average_material(
+    nickel_sim.plot_average_densities(
         times=np.linspace(0, 5 * 10 ** 2, 100).tolist(),
         average_over=50,
         jitter_electrons=True,

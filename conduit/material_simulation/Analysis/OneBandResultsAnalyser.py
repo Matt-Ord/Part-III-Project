@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Type
+from os import stat
+from typing import Dict, List, Type, Union
 import numpy as np
 import scipy.constants
 import scipy.integrate
@@ -83,24 +84,7 @@ class OneBandResultsAnalyser(ABC):
 
     def plot_adjusted_occupation_against_occupation(self):
         fig, ax = plt.subplots(1)
-        occupation_fractions = np.linspace(0.01, 0.99, 1000)
-
-        ax.plot(
-            occupation_fractions,
-            self.calculate_occupation_of_lower_band(occupation_fractions),
-        )
-
-        ax.set_xlabel("initial state occupation")
-        ax.set_ylabel("final state occupation")
-        ax.set_title(
-            (
-                f"plot of occupation against corrected occupation\n"
-                + r"for $\Delta{}E="
-                + "{:.3g}".format(self.energy_difference)
-                + r"J$"
-            )
-        )
-        ax.set_xlim([0, 1])
+        OneBandResultsAnalyserUtil.plot_adjusted_occupation_against_occupation(self, ax)
         plt.show()
 
     @abstractmethod
@@ -133,108 +117,23 @@ class OneBandResultsAnalyser(ABC):
 
     def plot_adjusted_log_rate_against_occupation(self):
         fig, ax = plt.subplots(1)
-        occupation_fractions = np.linspace(0.01, 0.99, 1000)
-
-        ax.plot(
-            occupation_fractions,
-            self.measured_log_rate_curve(occupation_fractions),
-            label="Measured Curve",
+        OneBandResultsAnalyserUtil.plot_adjusted_log_rate_against_occupation(
+            {"Corrected Curve": self}, ax
         )
-
-        ax.plot(
-            occupation_fractions,
-            self.adjusted_log_rate_curve(occupation_fractions),
-            label="Corrected Curve",
-        )
-        ax.set_xlabel("occupation of initial state")
-        ax.set_ylabel("ln(rate)")
-        ax.set_title(
-            (
-                f"plot of ln(rate) against initial occupation\n"
-                + r"for $\Delta{}E="
-                + "{:.3g}".format(self.energy_difference)
-                + r"J$"
-            )
-        )
-        ax.set_xlim([0, 1])
-        plt.legend()
         plt.show()
 
     def plot_adjusted_rate_against_occupation(self):
         fig, ax = plt.subplots(1)
-        occupation_fractions = np.linspace(0.01, 0.99, 1000)
-
-        ax.plot(
-            occupation_fractions,
-            self.measured_rate_curve(occupation_fractions),
-            label="Measured Curve",
+        OneBandResultsAnalyserUtil.plot_adjusted_rate_against_occupation(
+            {"Corrected Curve": self}, ax
         )
-
-        ax.plot(
-            occupation_fractions,
-            self.adjusted_rate_curve(occupation_fractions),
-            label="Corrected Curve",
-        )
-        ax.set_xlabel("occupation of initial state")
-        ax.set_ylabel("rate")
-        ax.set_title(
-            (
-                f"plot of rate against initial occupation\n"
-                + r"for $\Delta{}E="
-                + "{:.3g}".format(self.energy_difference)
-                + r"J$"
-            )
-        )
-        ax.set_xlim([0, 1])
-        plt.legend()
         plt.show()
 
     def plot_adjusted_rate_against_energy(self):
         fig, ax = plt.subplots(1)
-        energies = np.linspace(
-            self.chemical_potential - 2 * self.energy_difference,
-            self.chemical_potential + 2 * self.energy_difference,
-            1000,
+        OneBandResultsAnalyserUtil.plot_adjusted_rate_against_energy(
+            {"Corrected Curve": self}, ax
         )
-        occupation_fractions = self.calculate_occupation(energies)
-
-        ax.plot(
-            energies,
-            self.measured_rate_curve(occupation_fractions),
-            label="Measured Curve",
-        )
-
-        ax.plot(
-            energies,
-            self.adjusted_rate_curve(occupation_fractions),
-            label="Corrected Curve",
-        )
-
-        ax.axvline(
-            x=self.chemical_potential,
-            linestyle="dashed",
-            color="black",
-            alpha=0.3,
-        )
-        ax.axvline(
-            x=self.chemical_potential + self.energy_difference,
-            linestyle="dashed",
-            color="black",
-            alpha=0.3,
-        )
-
-        ax.set_xlabel("energy of initial state")
-        ax.set_ylabel("rate")
-        ax.set_ylim([0, None])
-        ax.set_title(
-            (
-                f"plot of rate against energy\n"
-                + r"for $\Delta{}E="
-                + "{:.3g}".format(self.energy_difference)
-                + r"J$"
-            )
-        )
-        plt.legend()
         plt.show()
 
     def calculate_measured_total_rate(self):
@@ -252,3 +151,197 @@ class OneBandResultsAnalyser(ABC):
 
         total_rate = scipy.integrate.simps(y=rates)
         return total_rate
+
+    def integrate_measured_total_rate(self):
+        total_rate = scipy.integrate.quad(
+            lambda e: self.measured_rate_curve(self.calculate_occupation(e))
+            / self.simulation_energy_bandwidth,
+            self.calculate_energy(0.9999),
+            self.calculate_energy(0.0001),
+        )[0]
+        return total_rate
+
+    def integrate_adjusted_total_rate(self):
+        total_rate = scipy.integrate.quad(
+            lambda e: self.adjusted_rate_curve(self.calculate_occupation(e))
+            / self.simulation_energy_bandwidth,
+            self.calculate_energy(0.9999),
+            self.calculate_energy(0.0001),
+        )[0]
+        return total_rate
+
+
+class OneBandResultsAnalyserUtil:
+    @staticmethod
+    def plot_adjusted_occupation_against_occupation(
+        analyser: OneBandResultsAnalyser, ax: Union[plt.Axes, None] = None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        occupation_fractions = np.linspace(0.01, 0.99, 1000)
+
+        ax.plot(
+            occupation_fractions,
+            analyser.calculate_occupation_of_lower_band(occupation_fractions),
+        )
+
+        ax.set_xlabel("Initial State Occupation")
+        ax.set_ylabel("Final State Occupation")
+        ax.set_title(
+            (
+                f"plot of Occupation Against Corrected Occupation\n"
+                + r"for $\Delta{}E="
+                + "{:.3g}".format(analyser.energy_difference)
+                + r"J$"
+            )
+        )
+        ax.set_xlim([0, 1])
+        return ax.get_figure(), ax
+
+    @staticmethod
+    def plot_adjusted_log_rate_against_occupation(
+        analysers: Dict[str, OneBandResultsAnalyser], ax: Union[plt.Axes, None] = None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+        occupation_fractions = np.linspace(0.01, 0.99, 1000)
+
+        ax.plot(
+            occupation_fractions,
+            next(iter(analysers.values())).measured_log_rate_curve(
+                occupation_fractions
+            ),
+            label="Measured Curve",
+        )
+        for (label, analyser) in analysers.items():
+            ax.plot(
+                occupation_fractions,
+                next(iter(analysers.values())).adjusted_log_rate_curve(
+                    occupation_fractions
+                ),
+                label="Corrected Curve",
+            )
+        ax.set_xlabel("Occupation of Initial State")
+        ax.set_ylabel("ln(Rate)")
+        ax.set_title(
+            (
+                f"Plot of ln(Rate) against Initial Occupation\n"
+                + r"for $\Delta{}E="
+                + "{:.3g}".format(next(iter(analysers.values())).energy_difference)
+                + r"J$"
+            )
+        )
+        ax.set_xlim([0, 1])
+        ax.legend()
+
+        return ax.get_figure(), ax
+
+    @staticmethod
+    def plot_adjusted_rate_against_occupation(
+        analysers: Dict[str, OneBandResultsAnalyser], ax: Union[plt.Axes, None] = None
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+        fig, ax = plt.subplots(1)
+        occupation_fractions = np.linspace(0.01, 0.99, 1000)
+
+        ax.plot(
+            occupation_fractions,
+            next(iter(analysers.values())).measured_rate_curve(occupation_fractions),
+            label="Measured Curve",
+        )
+        for (label, analyser) in analysers.items():
+            ax.plot(
+                occupation_fractions,
+                analyser.adjusted_rate_curve(occupation_fractions),
+                label=label,
+            )
+        ax.set_xlabel("Initial State Occupation")
+        ax.set_ylabel("Rate")
+        ax.set_title(
+            (
+                f"Plot of Rate Against Initial Occupation\n"
+                + r"for $\Delta{}E="
+                + "{:.3g}".format(next(iter(analysers.values())).energy_difference)
+                + r"J$"
+            )
+        )
+        ax.set_xlim([0, 1])
+        ax.legend()
+        return ax.get_figure(), ax
+
+    @staticmethod
+    def plot_adjusted_rate_against_energy(
+        analysers: Dict[str, OneBandResultsAnalyser],
+        ax: Union[plt.Axes, None] = None,
+        energy_range=2,
+    ):
+        if ax is None:
+            fig, ax = plt.subplots(1)
+
+        dummy_analyser = next(iter(analysers.values()))
+        energies = np.linspace(
+            dummy_analyser.chemical_potential
+            - energy_range * dummy_analyser.energy_difference,
+            dummy_analyser.chemical_potential
+            + energy_range * dummy_analyser.energy_difference,
+            1000,
+        )
+        occupation_fractions = dummy_analyser.calculate_occupation(energies)
+
+        ax.plot(
+            energies,
+            dummy_analyser.measured_rate_curve(occupation_fractions),
+            label="Measured Curve",
+        )
+        for (label, analyser) in analysers.items():
+            ax.plot(
+                energies,
+                analyser.adjusted_rate_curve(occupation_fractions),
+                label=label,
+            )
+
+        ax.axvline(
+            x=dummy_analyser.chemical_potential,
+            linestyle="dashed",
+            color="black",
+            alpha=0.3,
+        )
+        ax.axvline(
+            x=dummy_analyser.chemical_potential + dummy_analyser.energy_difference,
+            linestyle="dashed",
+            color="black",
+            alpha=0.3,
+        )
+
+        ax.set_xlabel(r"Energy of Initial State / J")
+        ax.set_ylabel(r"Rate / $s^{-1}$")
+        ax.set_ylim([0, None])
+        ax.set_xlim([energies[0], energies[-1]])
+        ax.set_title(
+            (
+                f"Plot of Rate Against Energy "
+                + r"for $\Delta{}E=3.04\times{}10^{-21}"
+                # + "{:.3g}".format(dummy_analyser.energy_difference)
+                + r"J$"
+            )
+        )
+
+        ax2 = ax.twinx()
+        ax2.plot(
+            energies,
+            dummy_analyser.calculate_occupation(energies),
+            color="black",
+            alpha=0.3,
+        )
+        ax2.set_ylim([0, 1])
+        ax2.set_ylabel("Occupation")
+        ax.patch.set_visible(False)
+        ax.set_zorder(ax2.get_zorder() + 1)
+        ax.legend()
+
+        fig: plt.Figure = ax.get_figure()
+        fig.set_size_inches(8, 3)
+        fig.tight_layout()
+        return fig, ax

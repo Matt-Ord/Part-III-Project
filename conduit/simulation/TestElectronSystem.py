@@ -1,3 +1,4 @@
+import sys
 from typing import final
 import unittest
 from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
@@ -175,6 +176,21 @@ class TestElectronSystem(unittest.TestCase):
             [0, -1, -1, 1, 1, 1],
         ]
         self.assertCountEqual(expected_base_matrix, actual_base_matrix.tolist())
+
+    def test_get_density_matrix(self):
+        system = ElectronSystem(np.array([0.1, 1]), [])
+        self.assertEqual(system.get_density_matrix().tolist(), [[1, 1], [1, 1]])
+        system = ElectronSystem(np.array([1, -1]), [])
+        self.assertEqual(system.get_density_matrix().tolist(), [[1, -1], [-1, 1]])
+        system = ElectronSystem(np.array([1, 1, 1, -1]), [[1], [2]])
+        self.assertEqual(
+            system.get_electron_density_matrix().tolist(), [[2, 0], [0, 2]]
+        )
+
+    def test_trace_get_density_matrix(self):
+        system = ElectronSystemUtil.create_random(ElectronSystem, 10, 5)
+
+        self.assertAlmostEqual(np.sum(np.diag(system.get_density_matrix())), 1)
 
 
 if __name__ == "__main__":

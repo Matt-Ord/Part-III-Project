@@ -5,7 +5,7 @@ from simulation.Hamiltonian import Hamiltonian, HamiltonianUtil
 
 
 class ElectronSystem:
-    def __init__(self, system_vector, electron_basis_states) -> None:
+    def __init__(self, system_vector: np.ndarray, electron_basis_states) -> None:
         self.electron_basis_states = np.array(electron_basis_states)
         self.system_vector = system_vector
 
@@ -23,16 +23,6 @@ class ElectronSystem:
             type(self)(evolved_system_vector, self.electron_basis_states)
             for evolved_system_vector in evolved_system_vectors
         ]
-
-    def evolve_system_decoherently(self, hamiltonian: Hamiltonian, time, hbar=1):
-        evolved_system_vector = hamiltonian.evolve_system_vector(
-            self.system_vector, time, hbar
-        )
-        evolved_system_vector = evolved_system_vector * np.exp(
-            2j * np.pi * np.random.rand(*evolved_system_vector.shape)
-        )
-
-        return type(self)(evolved_system_vector, self.electron_basis_states)
 
     def get_electron_density_for_each_hydrogen(self) -> np.ndarray:
         return self.get_probability_for_each_hydrogen().dot(
@@ -53,6 +43,25 @@ class ElectronSystem:
 
     def get_number_of_electrons(self):
         return self.electron_basis_states.shape[1]
+
+    def get_density_matrix(self) -> np.ndarray:
+        vec = self.system_vector[np.newaxis]
+        return np.matmul(vec.conj().T, vec)
+
+    def get_electron_density_matrix(self) -> np.ndarray:
+        density_matrix = self.get_density_matrix()
+        # Take the trace
+        electron_density_matrix = (
+            density_matrix[
+                : self.get_number_of_electron_states(),
+                : self.get_number_of_electron_states(),
+            ]
+            + density_matrix[
+                self.get_number_of_electron_states() :,
+                self.get_number_of_electron_states() :,
+            ]
+        )
+        return electron_density_matrix
 
     @staticmethod
     def _overlap_of_state(state_1, state_2):
@@ -166,8 +175,11 @@ class ElectronSystemUtil:
     # Creates a random state with probabilities weighted
     # exponentially by the relevant boltzmann factors
     @staticmethod
-    def _create_random_state_vector(boltzmann_factors, initial_occupancy):
-        boltzmann_probabilities = np.exp(-boltzmann_factors / 2)
+    def _create_random_state_vector(
+        electron_boltzmann_factors, hydrogen_boltzmann_factors, initial_occupancy
+    ):
+        boltzmann_probabilities = np.exp(-electron_boltzmann_factors / 2)
+        hydrogen_boltzmann_probabilities = np.exp(-hydrogen_boltzmann_factors / 2)
         state_probabilities = np.array(
             [
                 probability * np.random.normal() * np.exp(2j * np.pi * np.random.rand())
@@ -177,8 +189,12 @@ class ElectronSystemUtil:
 
         overall_state = np.concatenate(
             [
-                initial_occupancy * state_probabilities,
-                (1 - initial_occupancy) * state_probabilities,
+                initial_occupancy
+                * state_probabilities
+                * hydrogen_boltzmann_probabilities[0],
+                (1 - initial_occupancy)
+                * state_probabilities
+                * hydrogen_boltzmann_probabilities[1],
             ]
         )
         normalised_overall_state = overall_state / np.linalg.norm(overall_state)
@@ -203,11 +219,15 @@ class ElectronSystemUtil:
         system,
         number_of_electron_states,
         number_of_electrons,
-        boltzmann_factors=None,
+        electron_boltzmann_factors=None,
+        hydrogen_boltzmann_factors=None,
         initial_occupancy=1,
     ):
-        if boltzmann_factors is None:
-            boltzmann_factors = np.zeros(number_of_electron_states)
+        if electron_boltzmann_factors is None:
+            electron_boltzmann_factors = np.zeros(number_of_electron_states)
+
+        if hydrogen_boltzmann_factors is None:
+            hydrogen_boltzmann_factors = np.zeros(2)
 
         electron_basis_states = cls._generate_electron_basis(
             number_of_electron_states, number_of_electrons
@@ -215,37 +235,17 @@ class ElectronSystemUtil:
 
         multi_electron_boltzmann_factors = (
             cls._calculate_multi_electron_boltzmann_factors(
-                boltzmann_factors, np.array(electron_basis_states)
+                electron_boltzmann_factors, np.array(electron_basis_states)
             )
         )
 
         state_vector = cls._create_random_state_vector(
-            multi_electron_boltzmann_factors, initial_occupancy
+            multi_electron_boltzmann_factors,
+            hydrogen_boltzmann_factors,
+            initial_occupancy,
         )
 
         return system(state_vector, electron_basis_states)
-
-    @classmethod
-    def create_random_thermal(
-        cls,
-        system,
-        electron_energies,
-        temperature,
-        number_of_electrons,
-        hydrogen_state=0,
-    ):
-
-        boltzmann_factors = electron_energies / (
-            temperature * scipy.constants.Boltzmann
-        )
-
-        return cls.create_random(
-            system,
-            electron_energies.size,
-            number_of_electrons,
-            hydrogen_state,
-            boltzmann_factors,
-        )
 
     def create_kinetic(self, hamiltonian, electron_energies, hydrogen_energies):
         basis_states = self.get_electron_basis_states()

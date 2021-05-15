@@ -1,11 +1,4 @@
 import numpy as np
-import scipy.constants
-
-from properties.MaterialProperties import (
-    MaterialProperties,
-    NICKEL_MATERIAL_PROPERTIES,
-)
-
 from material_simulation.MultiBandMaterialSimulator import (
     MultiBandMaterialSimulator,
     MultiBandNickelMaterialSimulatorUtil,
@@ -57,7 +50,7 @@ if __name__ == "__main__":
     #     initial_electron_state=[1, 1, 1, 1, 0, 0, 0, 0],
     # )
 
-    nickel_sim.simulate_average_material(
+    nickel_sim.plot_average_densities(
         times=np.linspace(0, 4 * 10 ** -5, 1000).tolist(),
         average_over=20,
         jitter_electrons=True,

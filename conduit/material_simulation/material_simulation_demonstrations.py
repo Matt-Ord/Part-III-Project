@@ -1,3 +1,4 @@
+from numpy.core.function_base import linspace
 from numpy.lib.function_base import average
 from material_simulation.MultiBandMaterialSimulator import (
     MultiBandNickelMaterialSimulatorUtil,
@@ -30,6 +31,29 @@ def plot_simulation_energy_levels():
             [-5 * 10 ** (-25), 5 * 10 ** (-25)],
         ]
     )
+
+    class TempSim(TwoBandMaterialSimulator):
+        @property
+        def block_factors_for_simulation(self):
+            M = super().block_factors_for_simulation
+            return [
+                [0, M[0][1]],
+                [M[1][0], 0],
+            ]
+
+    # Two large Band
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        TempSim,
+        temperature=150,
+        number_of_states_per_band=5,
+        number_of_electrons=5,
+        target_frequency=150 * scipy.constants.Boltzmann * 0.1 / scipy.constants.hbar,
+    )
+    # nickel_sim.plot_average_electron_distribution(
+    #     times=[0, 10 ** (-20)], average_over=10
+    # )
+    # nickel_sim.plot_unpertubed_material_energy_states()
+    nickel_sim.plot_material_energy_states()
 
     # Two large Band
     nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
@@ -113,7 +137,7 @@ def plot_rough_simulation_with_electron_densities():
         / scipy.constants.hbar,
     )
 
-    nickel_sim.simulate_material(
+    nickel_sim.plot_electron_densities(
         times=np.linspace(0, 5 * 10 ** -4, 1000).tolist(),
         jitter_electrons=True,
     )
@@ -140,7 +164,7 @@ def plot_rough_simulation_without_hydrogen_energies():
     )
     ax.set_title(
         "Plot of Electron Denstity against time\n"
-        + r"showing a tunnelling time of around $10^{-10}$ seconds"
+        + r"showing a tunnelling time of around $10^{-9}$ seconds"
     )
     ax.legend()
     fig.tight_layout()
@@ -158,12 +182,11 @@ def plot_rough_simulation_without_hydrogen_energies():
     nickel_sim.plot_average_electron_distribution(
         times=np.linspace(0, 2 * 10 ** -8, 1000),
         average_over=10,
-        jitter_electrons=True,
         ax=ax,
     )
     ax.set_title(
         "Plot of Electron Denstity against time\n"
-        + r"showing a tunnelling time of around $10^{-10}$ seconds"
+        + r"showing a tunnelling time of around $10^{-9}$ seconds"
     )
     ax.set_ylim([0, 1])
     fig.tight_layout()
@@ -294,7 +317,6 @@ def demonstrate_temperature_inversion():
     nickel_sim.plot_average_electron_distribution(
         times=np.linspace(1 * 10 ** -8, 2 * 10 ** -8, 1000),
         average_over=10,
-        jitter_electrons=True,
         ax=ax,
     )
     ax.set_title(
@@ -325,7 +347,7 @@ def plot_material_with_and_without_diagonal():
         number_of_electrons=5,
         target_frequency=1 * 10 ** (9),
     )
-    nickel_sim.simulate_average_material(
+    nickel_sim.plot_average_densities(
         times=np.linspace(0, 5e-04, 1000).tolist(),
         average_over=100,
         jitter_electrons=True,
@@ -333,7 +355,7 @@ def plot_material_with_and_without_diagonal():
     )
 
     nickel_sim.remove_diagonal_block_factors_for_simulation()
-    nickel_sim.simulate_average_material(
+    nickel_sim.plot_average_densities(
         times=np.linspace(0, 5e-04, 1000).tolist(),
         average_over=100,
         jitter_electrons=True,
@@ -349,10 +371,11 @@ def plot_two_band_sim_example():
         temperature=150,
         number_of_states_per_band=5,
         number_of_electrons=number_of_electrons,
-        target_frequency=150
-        * scipy.constants.Boltzmann
-        * 0.0000001
-        / scipy.constants.hbar,
+        target_frequency=1 * 10 ** (5)
+        # target_frequency=150
+        # * scipy.constants.Boltzmann
+        # * 0.0000001
+        # / scipy.constants.hbar,
     )
 
     # initial_densities = nickel_sim.get_initial_electron_densities(average_over=100)
@@ -363,10 +386,14 @@ def plot_two_band_sim_example():
     gamma2 = lower_n * (1 - upper_n)
 
     fig, ax = nickel_sim.plot_average_material(
-        times=np.linspace(0, 50, 1000).tolist(),
+        times=np.linspace(0, 1 * 10 ** (1), 1000).tolist(),
         average_over=10,
         jitter_electrons=True,
-        initial_occupancy=1,
+        initial_occupancy=0.6920113340410092,
+    )
+    ax.set_ylim([0, 5])
+    ax.set_title(
+        "Plot of Average Electron Density Against Time\nWith an Initial Occuapancy Close To Equilibrium"
     )
 
     upper_line = number_of_electrons * gamma1 / (gamma1 + gamma2)
@@ -474,12 +501,54 @@ def plot_one_band_non_degenerate_sim_example():
     pass
 
 
+def plot_density_matrix_demonstration():
+    nickel_sim = MultiBandNickelMaterialSimulatorUtil.create(
+        OneBandMaterialSimulator,
+        temperature=150,
+        number_of_states_per_band=8,
+        number_of_electrons=4,
+        target_frequency=1 * 10 ** (9),
+    )
+    nickel_sim.plot_average_material(
+        times=np.linspace(0, 2e-4, 1000), jitter_electrons=True
+    )
+    plt.show()
+    fig, ax = nickel_sim.plot_average_off_diagonal_density_matrix(
+        initial_time=1e-3,
+        average_over_times=np.linspace(0, 0.5e-7, 100).tolist(),
+        average_over=100,
+    )
+    ax.set_title(
+        "Average off Diagonal Against Time With a\n"
+        + r"Characteristic decay time of $\sim{}10^{-8}s$"
+    )
+    plt.show()
+    fig, ax = nickel_sim.plot_off_diagonal_density_matrix(
+        times=np.linspace(0, 10e-3, 5000)
+    )
+    plt.show()
+    fig, ax = nickel_sim.plot_time_average_density_matrix(
+        times=np.linspace(1e-3, 1.01e-3, 5000)
+    )
+    ax.set_title("Full Density Matrix Averaged Over $10^{-6}s$")
+    plt.show()
+    fig, ax = nickel_sim.plot_density_matrix(time=1e-3)
+    plt.show()
+    fig, ax = nickel_sim.plot_time_average_electron_density_matrix(
+        times=np.linspace(1e-3, 10e-3, 5000)
+    )
+    plt.show()
+    fig, ax = nickel_sim.plot_electron_density_matrix(time=1e-3)
+    plt.show()
+
+
 if __name__ == "__main__":
+    # plot_density_matrix_demonstration()
     # print_hamiltonian()
     # plot_simulation_energy_levels()
     # plot_rough_simulation_with_electron_densities()
     # plot_rough_simulation_without_hydrogen_energies()
-    # plot_rough_simulation_with_hydrogen_energies()
+    plot_rough_simulation_with_hydrogen_energies()
     # demonstrate_temperature_inversion()
     # plot_material_with_and_without_diagonal()
-    plot_two_band_sim_example()
+    # plot_two_band_sim_example()

@@ -15,10 +15,15 @@ from material_simulation.MaterialSimulator import MaterialSimulator
 
 class SimpleMaterialElectronSimulator(MaterialSimulator):
     def __init__(
-        self, material_properties, temperature, number_of_states, **kwargs
+        self,
+        material_properties,
+        temperature,
+        number_of_states,
+        number_of_electrons,
+        **kwargs
     ) -> None:
         self.number_of_states = number_of_states
-        super().__init__(material_properties, temperature)
+        super().__init__(material_properties, temperature, number_of_electrons)
         print(
             self.electron_energies,
             self.hydrogen_overlaps,
@@ -35,20 +40,6 @@ class SimpleMaterialElectronSimulator(MaterialSimulator):
         e_states = np.linspace(-d_e, d_e, self.number_of_states)
         return e_states
 
-        # k_states = np.linspace(
-        #     self.material_properties.fermi_wavevector - d_k,
-        #     self.material_properties.fermi_wavevector + d_k,
-        #     number_of_states,
-        # )
-        k_states = np.linspace(
-            self.fermi_wavevector - d_k,
-            self.fermi_wavevector + d_k,
-            number_of_states,
-        )
-
-        energies = self._calculate_electron_energies(k_states)
-        return energies - self._calculate_electron_energies(self.fermi_wavevector)
-
     def _get_energy_spacing(self):
         return self.electron_energies[1] - self.electron_energies[0]
 
@@ -57,11 +48,12 @@ class SimpleMaterialElectronSimulator(MaterialSimulator):
 
 
 class SimpleNickelElectronSimulator(SimpleMaterialElectronSimulator):
-    def __init__(self, temperature, number_of_states) -> None:
+    def __init__(self, temperature, number_of_states, number_of_electrons) -> None:
         super().__init__(
             NICKEL_MATERIAL_PROPERTIES,
             temperature,
             number_of_states,
+            number_of_electrons,
         )
 
 
@@ -69,12 +61,15 @@ if __name__ == "__main__":
     nickel_sim = SimpleNickelElectronSimulator(
         temperature=150,
         number_of_states=8,
+        number_of_electrons=4,
     )
-    nickel_sim.simulate_material(times=np.linspace(0, 1 * 10 ** 8, 1000))
+    nickel_sim.plot_electron_densities(times=np.linspace(0, 1 * 10 ** 8, 1000).tolist())
 
     # nickel_sim.simulate_average_material(
     #     times=np.linspace(0, 3 * 10 ** -10, 500), average_over=20
     # )
-    nickel_sim.simulate_average_material(
-        times=np.linspace(0, 3 * 10 ** 8, 500), average_over=40, jitter_electrons=True
+    nickel_sim.plot_average_densities(
+        times=np.linspace(0, 3 * 10 ** 8, 500).tolist(),
+        average_over=40,
+        jitter_electrons=True,
     )
