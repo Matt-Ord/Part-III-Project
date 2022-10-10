@@ -16,7 +16,8 @@ class FinalResultsPlotter:
         return 0.5 - 0.5 * np.exp(-time * rate)
 
     def plot_predicted_tunnelling_curve(self, times):
-        fig, ax = plt.subplots(1)
+        fig = plt.figure()
+        ax = fig.add_subplot()
 
         for i, (key, rates) in enumerate(self.decay_rates.items()):
             (line,) = ax.plot(

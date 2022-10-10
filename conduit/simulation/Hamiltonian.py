@@ -99,11 +99,9 @@ class Hamiltonian:
                 expected({self.get_number_of_states()},)"
             )
         return np.linalg.solve(self.eigenvectors, vector)
-        return np.linalg.inv(self.eigenvectors.T).dot(vector)
 
     def get_vector_of_eigen_decomposition(self, decomposition):
         return np.dot(self.eigenvectors, decomposition)
-        return self.eigenvectors.T.dot(decomposition)
 
     def get_vector_of_multiple_eigen_decompositons(self, decompositions):
         return np.tensordot(self.eigenvectors, decompositions, axes=([1], [-1])).T

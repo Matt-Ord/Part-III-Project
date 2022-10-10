@@ -1,5 +1,5 @@
 import unittest
-from material_simulation.Analysis.OneBandCoshResultsAnalyser import (
+from material_simulation.analysis.OneBandCoshResultsAnalyser import (
     OneBandCoshResultsAnalyserType3,
 )
 from material_simulation.MultiBandMaterialSimulator import (

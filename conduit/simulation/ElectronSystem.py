@@ -109,18 +109,6 @@ class ElectronSystem:
 
 
 class ElectronSystemUtil:
-    def __init__(self, system: ElectronSystem) -> None:
-        self.system = system
-
-    def get_number_of_electron_states(self):
-        return self.system.get_number_of_electron_states()
-
-    def get_number_of_electrons(self):
-        return self.system.get_number_of_electrons()
-
-    def get_electron_basis_states(self):
-        return self.system.electron_basis_states
-
     @classmethod
     def _generate_electron_basis(cls, number_of_states, number_of_electrons):
         if number_of_states < number_of_electrons or number_of_electrons < 0:
@@ -200,6 +188,8 @@ class ElectronSystemUtil:
         normalised_overall_state = overall_state / np.linalg.norm(overall_state)
         return normalised_overall_state
 
+    # Calculates the boltzmann factors for the
+    # multi electron states
     @staticmethod
     def _calculate_multi_electron_boltzmann_factors(
         single_electron_boltzmann_factors, electron_basis_states
@@ -247,6 +237,20 @@ class ElectronSystemUtil:
 
         return system(state_vector, electron_basis_states)
 
+
+class ElectronSystemHamiltonianFactory:
+    def __init__(self, system: ElectronSystem) -> None:
+        self.system = system
+
+    def get_number_of_electron_states(self):
+        return self.system.get_number_of_electron_states()
+
+    def get_number_of_electrons(self):
+        return self.system.get_number_of_electrons()
+
+    def get_electron_basis_states(self):
+        return self.system.electron_basis_states
+
     def create_kinetic(self, hamiltonian, electron_energies, hydrogen_energies):
         basis_states = self.get_electron_basis_states()
         basis_electron_energies = np.sum(
@@ -268,6 +272,25 @@ class ElectronSystemUtil:
             hamiltonian, states_in_each_block, block_factors
         )
 
+    def create_constant_interaction(self, hamiltonian, block_factors, q_prefactor=1):
+        k_values = np.zeros(self.get_number_of_electrons())
+
+        def q_factor(x):
+            return q_prefactor
+
+        return self.create_q_dependent_interaction(
+            hamiltonian, block_factors, k_values, q_factor
+        )
+
+    def create_q_dependent_interaction(
+        self, hamiltonian, block_factors, k_values, q_factor
+    ):
+        base_matrix = self._generate_single_hop_q_dependant_base_matrix(
+            np.array(k_values), q_factor
+        )
+
+        return HamiltonianUtil.create_block(hamiltonian, base_matrix, block_factors)
+
     @classmethod
     def _calculate_q_dependant_single_hop_strength(
         cls,
@@ -284,12 +307,12 @@ class ElectronSystemUtil:
         q = np.abs(sum(k_differences))
         if np.count_nonzero(differences) != 2:
             return q_factor(q)
-        return q_factor(q) * cls.exchange_sign(state_a, state_b)
+        return q_factor(q) * cls._exchange_sign(state_a, state_b)
 
     # calculates the fermion exchange sign
     # assuming only one exchange
     @staticmethod
-    def exchange_sign(initial_electron_state, final_electron_state):
+    def _exchange_sign(initial_electron_state, final_electron_state):
         difference = initial_electron_state - final_electron_state
 
         exchanged_index = np.argwhere(difference != 0)[:, 0]
@@ -329,32 +352,3 @@ class ElectronSystemUtil:
                     electron_basis_states[x], electron_basis_states[y]
                 )
         return a
-
-    def create_constant_interaction(self, hamiltonian, block_factors, q_prefactor=1):
-        k_values = np.zeros(self.get_number_of_electrons())
-
-        def q_factor(x):
-            return q_prefactor
-
-        return self.create_q_dependent_interaction(
-            hamiltonian, block_factors, k_values, q_factor
-        )
-
-    def create_q_dependent_interaction(
-        self, hamiltonian, block_factors, k_values, q_factor
-    ):
-        base_matrix = self._generate_single_hop_q_dependant_base_matrix(
-            np.array(k_values), q_factor
-        )
-
-        return HamiltonianUtil.create_block(hamiltonian, base_matrix, block_factors)
-
-    def create_system_vector_for_system_with(self, electron_state, hydrogen_state):
-        state_vector = self._create_explicit_state_vector(
-            self.get_electron_basis_states(), electron_state, hydrogen_state
-        )
-        return state_vector
-
-    @classmethod
-    def given(cls, system: ElectronSystem):
-        return cls(system)

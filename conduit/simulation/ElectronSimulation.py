@@ -4,7 +4,11 @@ from typing import Callable, List, NamedTuple
 
 from simulation.Hamiltonian import Hamiltonian
 import numpy as np
-from simulation.ElectronSystem import ElectronSystem, ElectronSystemUtil
+from simulation.ElectronSystem import (
+    ElectronSystem,
+    ElectronSystemHamiltonianFactory,
+    ElectronSystemUtil,
+)
 
 
 def randomise_electron_energies(energies: np.ndarray, scale):
@@ -110,7 +114,9 @@ class ElectronSimulation:
             np.array(self.electron_energies)
         )
 
-        kinetic_hamiltonian = ElectronSystemUtil.given(dummy_system).create_kinetic(
+        kinetic_hamiltonian = ElectronSystemHamiltonianFactory(
+            dummy_system
+        ).create_kinetic(
             Hamiltonian,
             electron_energies,
             self.hydrogen_energies,
@@ -120,7 +126,7 @@ class ElectronSimulation:
     def _create_interaction_hamiltonian(self) -> Hamiltonian:
         dummy_system = self._setup_random_initial_system()
 
-        interaction_hamiltonian = ElectronSystemUtil.given(
+        interaction_hamiltonian = ElectronSystemHamiltonianFactory(
             dummy_system
         ).create_constant_interaction(Hamiltonian, self.block_factors, self.q_prefactor)
         return interaction_hamiltonian

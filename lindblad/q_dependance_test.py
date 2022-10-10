@@ -3,7 +3,7 @@ import numpy as np
 import scipy.constants, scipy.integrate
 from properties.MaterialProperties import NICKEL_MATERIAL_PROPERTIES
 
-
+# Used to test the q independance approximation
 class GammaCalculator(ABC):
 
     a0 = (

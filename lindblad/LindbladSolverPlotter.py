@@ -152,13 +152,13 @@ def plot_rotating_wave_lindblad():
 
 def calculate_gamma_prefactor(temperature):
     fermi_wavevector = NICKEL_MATERIAL_PROPERTIES.fermi_wavevector
-    boltzmaan_energy = scipy.constants.Boltzmann * temperature
+    boltzmann_energy = scipy.constants.Boltzmann * temperature
     # Calculation grouped to reduce floating point errors
-    a = (scipy.constants.hbar ** 2) / (scipy.constants.elementary_charge ** 2)
-    b = (boltzmaan_energy * scipy.constants.hbar * (fermi_wavevector ** 2)) / (
-        scipy.constants.elementary_charge ** 2
+    a = (scipy.constants.hbar**2) / (scipy.constants.elementary_charge**2)
+    b = (boltzmann_energy * scipy.constants.hbar * (fermi_wavevector**2)) / (
+        scipy.constants.elementary_charge**2
     )
-    c = (scipy.constants.epsilon_0 ** 2) / (scipy.constants.electron_mass ** 2)
+    c = (scipy.constants.epsilon_0**2) / (scipy.constants.electron_mass**2)
     d = 64 * np.sqrt(np.pi)
     return a * b * c * d
 
@@ -394,7 +394,9 @@ def plot_many_state_lindblad():
 
 
 if __name__ == "__main__":
-    plot_full_lindblad_with_sink()
+    print(calculate_gamma_prefactor(150))
+    # calculate_combined_lindblad_rate(150)
+    # plot_full_lindblad_with_sink()
     # plot_full_lindblad()
     # plot_rotating_wave_lindblad()
-    plot_rate_against_temperature()
+    # plot_rate_against_temperature()

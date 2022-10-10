@@ -3,7 +3,7 @@ import scipy.constants, scipy.integrate
 from properties.MaterialProperties import NICKEL_MATERIAL_PROPERTIES
 import matplotlib.pyplot as plt
 
-
+# Used to test the exp approximation
 def get_delta_e(k_1, k_2):
     E1 = (scipy.constants.hbar * k_1) ** 2 / (2 * scipy.constants.m_e)
     E2 = (scipy.constants.hbar * k_2) ** 2 / (2 * scipy.constants.m_e)

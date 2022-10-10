@@ -64,6 +64,7 @@ class MultipleSiteLindbladSolver(LindbladSolver):
         distances = np.inf * np.ones(shape=self.number_of_sites)
         distances[i] = 0
         distance = 1
+        # Walk through the lattice and update the distances
         while (np.inf in distances) and distance < self.number_of_sites:
             for index in np.argwhere(distances == (distance - 1)):
                 for neighbour in self._get_neighbours_site_i(index):
@@ -98,9 +99,6 @@ class MultipleSiteLindbladSolver(LindbladSolver):
         # fcc sites lie on even rows
         return self.get_coordinate_of_index(i)[0] % 2 != 0
 
-    def _get_all_indicies(self):
-        return [0, 1]
-
     def _get_gamma_factor_site_i(self, i):
         type_i = self._get_type_of_site_i(i)
         not_type_i = not type_i
@@ -117,7 +115,6 @@ class MultipleSiteLindbladSolver(LindbladSolver):
             )
             for j in neighbours
         ]
-        # print(flux_for_each_neighbour)
         return 2 * sum(flux_for_each_neighbour)
 
     @property
@@ -193,10 +190,6 @@ class MultipleSiteWithHopsLindbladSolver(MultipleSiteLindbladSolver):
                 max_step=self._max_step,
             )
             final_state = soln.y[:, -1]
-            # print(soln.t + current_soln["t"][:-1])
-            # if len(soln.t) == 1:
-            #     current_soln["t"] = soln.t[:]
-            # else:
             current_soln["t"] = current_soln["t"][:-1] + soln.t.tolist()
             current_soln["y"] = [
                 curr[:-1] + new.tolist()

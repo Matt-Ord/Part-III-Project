@@ -65,11 +65,11 @@ class LindbladSolver(ABC):
     @cached_property
     def gamma_prefactor(self) -> float:
         # Calculation grouped to reduce floating point errors
-        a = (scipy.constants.hbar ** 2) / (scipy.constants.elementary_charge ** 2)
+        a = (scipy.constants.hbar**2) / (scipy.constants.elementary_charge**2)
         b = (
-            self.boltzmaan_energy * scipy.constants.hbar * (self.fermi_wavevector ** 2)
-        ) / (scipy.constants.elementary_charge ** 2)
-        c = (scipy.constants.epsilon_0 ** 2) / (scipy.constants.electron_mass ** 2)
+            self.boltzmaan_energy * scipy.constants.hbar * (self.fermi_wavevector**2)
+        ) / (scipy.constants.elementary_charge**2)
+        c = (scipy.constants.epsilon_0**2) / (scipy.constants.electron_mass**2)
         d = 32 * np.sqrt(np.pi)
         return a * b * c * d
 
